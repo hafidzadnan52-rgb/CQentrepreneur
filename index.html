@@ -6,9 +6,9 @@
 <title>CAHAYA ENTREPRENEUR - Entrepreneur Management System</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#064E3B">
-<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
-<link rel="icon" href="icons/favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entrepreneur">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1269,18 +1269,18 @@ async function exportRekapKeuangan(){
 // ---------- Slider dashboard ----------
 // Gambar ada di folder slide/ (satu folder dengan file HTML). Ganti/tambah gambar cukup edit daftar ini.
 const DASH_SLIDES=[
-  ['slide/slide-01.jpg','Sebaik-baik manusia adalah yang paling bermanfaat bagi manusia lainnya (HR. Ahmad)'],
-  ['slide/slide-02.jpg','Mulai dari langkah kecil, untuk dampak besar'],
-  ['slide/slide-03.jpg','Al-Qur\u2019an adalah cahaya untuk setiap langkah kehidupan kita'],
-  ['slide/slide-04.jpg','Ilmu menguatkan iman, wirausaha menggerakkan umat'],
-  ['slide/slide-05.jpg','Teruslah melangkah, setiap proses hari ini adalah bekal masa depan yang lebih baik'],
-  ['slide/slide-06.jpg','Tawakkal setelah ikhtiar adalah kunci ketenangan hati (QS. Ali Imran: 122)'],
-  ['slide/slide-07.jpg','Belajar, Bertumbuh, Berkarya, Memberi Manfaat'],
-  ['slide/slide-08.jpg','Disiplin hari ini melahirkan hasil luar biasa esok hari'],
-  ['slide/slide-09.jpg','Generasi Qur\u2019ani, mandiri dalam berkarya, siap memimpin masa depan'],
-  ['slide/slide-10.jpg','Rencanakan, Kerjakan, Evaluasi, Tingkatkan'],
-  ['slide/slide-11.jpg','Tidak ada usaha yang sia-sia, selama diniatkan karena Allah'],
-  ['slide/slide-12.jpg','Niat yang lurus, ilmu yang cukup, usaha yang sungguh-sungguh, doa yang tidak putus, hasil yang berkah']
+  ['slide-01.jpg','Sebaik-baik manusia adalah yang paling bermanfaat bagi manusia lainnya (HR. Ahmad)'],
+  ['slide-02.jpg','Mulai dari langkah kecil, untuk dampak besar'],
+  ['slide-03.jpg','Al-Qur\u2019an adalah cahaya untuk setiap langkah kehidupan kita'],
+  ['slide-04.jpg','Ilmu menguatkan iman, wirausaha menggerakkan umat'],
+  ['slide-05.jpg','Teruslah melangkah, setiap proses hari ini adalah bekal masa depan yang lebih baik'],
+  ['slide-06.jpg','Tawakkal setelah ikhtiar adalah kunci ketenangan hati (QS. Ali Imran: 122)'],
+  ['slide-07.jpg','Belajar, Bertumbuh, Berkarya, Memberi Manfaat'],
+  ['slide-08.jpg','Disiplin hari ini melahirkan hasil luar biasa esok hari'],
+  ['slide-09.jpg','Generasi Qur\u2019ani, mandiri dalam berkarya, siap memimpin masa depan'],
+  ['slide-10.jpg','Rencanakan, Kerjakan, Evaluasi, Tingkatkan'],
+  ['slide-11.jpg','Tidak ada usaha yang sia-sia, selama diniatkan karena Allah'],
+  ['slide-12.jpg','Niat yang lurus, ilmu yang cukup, usaha yang sungguh-sungguh, doa yang tidak putus, hasil yang berkah']
 ];
 const DASH_SLIDE_MS=5500;
 (function(){
@@ -1294,8 +1294,10 @@ const DASH_SLIDE_MS=5500;
     const slides=DASH_SLIDES.map(([src,alt],i)=>{
       const d=document.createElement('div');d.className='ds-slide';d.setAttribute('role','group');d.setAttribute('aria-label',`${i+1} dari ${DASH_SLIDES.length}`);
       const im=new Image();im.alt=alt;im.draggable=false;im.decoding='async';
-      im.onload=im.onerror=function(e){if(e&&e.type==='error')d.dataset.bad='1';if(--pending===0)ready()};
-      im.src=src;d.appendChild(im);track.appendChild(d);return d});
+      let tried=0;const cands=[src,'slide/'+src];
+      im.onload=function(){if(--pending===0)ready()};
+      im.onerror=function(){if(++tried<cands.length){im.src=cands[tried];return}d.dataset.bad='1';if(--pending===0)ready()};
+      im.src=cands[0];d.appendChild(im);track.appendChild(d);return d});
     // batas waktu agar slider tetap muncul walau koneksi lambat
     setTimeout(()=>{if(pending>0){pending=0;ready()}},2500);
     let started=false;
