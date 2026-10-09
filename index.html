@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#064E3B">
 <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
@@ -176,6 +177,12 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 .sync-ready,.sync-connecting,.sync-offline{position:fixed;right:12px;bottom:12px;z-index:9999;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .sync-ready{background:#E3F4EC;color:#0B6B4D}.sync-connecting{background:#FFF4D6;color:#8A6A00}.sync-offline{background:#FDE3E3;color:#B42318}
 .user-profile{cursor:pointer}
+#installBanner{display:none;position:fixed;left:50%;bottom:56px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));z-index:10000;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 14px 40px rgba(6,78,59,.28);border:1px solid #dcebe3;align-items:center;gap:12px}
+#installBanner img{width:48px;height:48px;border-radius:12px;flex:none}
+#installBanner .ib-text{flex:1;font-size:13px;line-height:1.35;color:#2B3A33}#installBanner .ib-text strong{display:block;font-size:14.5px;color:#0B3D2E}
+#installBanner .ib-act{display:flex;flex-direction:column;gap:6px}
+#installBanner button{border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
+#installBanner .ib-yes{background:linear-gradient(135deg,#0B7A57,#064E3B);color:#fff}#installBanner .ib-no{background:#eef2ef;color:#4b5b54}
 </style>
 </head>
 <body>
@@ -402,7 +409,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         </div>
         <div class="settings-section">
           <div class="settings-section-title">📊 Informasi Sistem</div>
-          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.10.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
+          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.11.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">⚠️ Zona Berbahaya</div>
@@ -1497,11 +1504,28 @@ window.fbOnRemote=()=>{
 };
 window.fbStatus=s=>{const e=$('syncStatus');if(!e)return;window.fbState=s;
   e.className='sync-'+s;e.textContent=s==='ready'?'☁️ Tersinkron':s==='connecting'?'⏳ Menyinkronkan…':'⚠️ Offline / gagal sinkron'};
+// ---------- Install aplikasi (PWA) ----------
+let deferredInstall=null;
+const installHidden=()=>{try{return Date.now()-(+localStorage.getItem('ce_install_dismiss')||0)<7*864e5}catch(e){return false}};
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredInstall=e;
+  if(!installHidden()&&!matchMedia('(display-mode: standalone)').matches)$('installBanner').style.display='flex';
+});
+async function installApp(){
+  if(!deferredInstall)return;
+  $('installBanner').style.display='none';
+  deferredInstall.prompt();
+  try{await deferredInstall.userChoice}catch(e){}
+  deferredInstall=null;
+}
+function dismissInstall(){$('installBanner').style.display='none';try{localStorage.setItem('ce_install_dismiss',String(Date.now()))}catch(e){}}
+window.addEventListener('appinstalled',()=>{deferredInstall=null;$('installBanner').style.display='none'});
 // ---------- Start ----------
 migrateModel();initData();seedRealData();migrateEvent();
 try{let u=JSON.parse(sessionStorage.getItem('ce_user')||'null');if(!u){const r=localStorage.getItem('ce_remember');if(r){u={username:r};$('loginRemember').checked=true;$('loginUsername').value=r}}const acc=u&&DB.get('accounts').find(a=>a.username===u.username);if(acc){currentUser=acc;sessionStorage.setItem('ce_user',JSON.stringify(acc));showApp()}}catch(e){}
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
+<div id="installBanner" role="dialog" aria-label="Install aplikasi"><img src="icon-192.png" alt=""><div class="ib-text"><strong>Install Cahaya Entrepreneur</strong>Pasang di perangkat ini agar bisa dibuka seperti aplikasi, langsung dari layar utama.</div><div class="ib-act"><button class="ib-yes" onclick="installApp()">Install</button><button class="ib-no" onclick="dismissInstall()">Nanti</button></div></div>
 <div id="syncStatus" class="sync-connecting">⏳ Menyinkronkan…</div>
 <script>window.fbState='connecting';setTimeout(()=>{if(window.fbState==='connecting')window.fbStatus('offline')},8000)</script>
 <script type="module">
