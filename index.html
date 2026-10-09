@@ -173,6 +173,9 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 .pw-eye:hover{color:var(--primary);background:rgba(8,127,91,.08)}.pw-eye svg{width:20px;height:20px}.pw-eye .off{display:none}.pw-eye.show .on{display:none}.pw-eye.show .off{display:block}
 .remember-row{display:flex;align-items:center;gap:8px;margin:-4px 0 16px;font-size:13.5px;color:var(--text);cursor:pointer;user-select:none}
 .remember-row input{width:17px;height:17px;accent-color:var(--primary);cursor:pointer;margin:0}
+.sync-ready,.sync-connecting,.sync-offline{position:fixed;right:12px;bottom:12px;z-index:9999;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.sync-ready{background:#E3F4EC;color:#0B6B4D}.sync-connecting{background:#FFF4D6;color:#8A6A00}.sync-offline{background:#FDE3E3;color:#B42318}
+.user-profile{cursor:pointer}
 </style>
 </head>
 <body>
@@ -222,7 +225,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
   <main class="main">
     <header class="topbar">
       <div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()">☰</button><strong id="breadcrumbText">Dashboard</strong></div>
-      <div class="user-profile"><div class="user-avatar" id="userAvatar">U</div><div><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRole">Administrator</div></div></div>
+      <div class="user-profile" title="Edit akun saya" onclick="showEditAkun(currentUser.username,true)"><div class="user-avatar" id="userAvatar">U</div><div><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRole">Administrator</div></div></div>
     </header>
 
     <div class="page active" id="page-dashboard">
@@ -399,7 +402,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         </div>
         <div class="settings-section">
           <div class="settings-section-title">📊 Informasi Sistem</div>
-          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.9.4</div><div><strong>Database:</strong> localStorage</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
+          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.10.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">⚠️ Zona Berbahaya</div>
@@ -452,7 +455,7 @@ const uid=()=>Date.now()*1000+Math.floor(Math.random()*1000);
 const DB={
   raw(k,d=[]){try{const v=localStorage.getItem('ce_'+k);return v?(JSON.parse(v)??d):d}catch(e){console.error(e);return d}},
   get(k,d=[]){return k==='penilaian'?mergedPen():k==='keuangan'?mergedKeu():DB.raw(k,d)},
-  set(k,v){try{localStorage.setItem('ce_'+k,JSON.stringify(v));return true}catch(e){console.error(e);alert('⚠️ Penyimpanan browser penuh. Hapus beberapa foto lalu coba lagi.');return false}}
+  set(k,v){try{const s=JSON.stringify(v);localStorage.setItem('ce_'+k,s);try{window.fbPush&&window.fbPush(k,s)}catch(e){}return true}catch(e){console.error(e);alert('⚠️ Penyimpanan browser penuh. Hapus beberapa foto lalu coba lagi.');return false}}
 };
 const DRIVE_UPLOAD_URL='https://script.google.com/macros/s/AKfycbw7AiIIrSwZ3d-d91KfsZ9EZqvERz07mV3GGz9vkS1W0AzMCD-QADSp4bjwus703mKf0A/exec';
 const OR_URL='https://openrouter.ai/api/v1/chat/completions';
@@ -512,6 +515,7 @@ function migrateModel(){}
 function doLogin(){
   const u=$('loginUsername').value.trim(),p=$('loginPassword').value;
   if(!u||!p)return alert('Username dan password harus diisi!');
+  if(window.fbState==='connecting')return alert('Sedang menyinkronkan data dari server, coba lagi beberapa detik.');
   const acc=DB.get('accounts').find(a=>a.username===u&&a.password===p);
   if(!acc)return alert('Username atau password salah!');
   currentUser=acc;sessionStorage.setItem('ce_user',JSON.stringify(acc));
@@ -542,7 +546,7 @@ function resetAllData(){
 function wipe(){Object.keys(localStorage).forEach(k=>{if(k.startsWith('ce_')&&!['ce_or_api_key','ce_or_model'].includes(k))localStorage.removeItem(k)})}
 function clearAllData(){
   if(currentUser?.role!=='admin')return;
-  if(!confirm('Hapus SEMUA data penilaian, siswa, kelompok, dan foto? Tidak dapat dibatalkan!'))return;
+  if(!confirm('Hapus SEMUA data penilaian, siswa, kelompok, dan foto? Data di Firebase (semua perangkat) ikut kembali ke data awal. Tidak dapat dibatalkan!'))return;
   wipe();initData();alert('Semua data dikembalikan ke data awal.');showPage('dashboard');
 }
 
@@ -981,14 +985,45 @@ function showImportFasilitator(){
 }
 function deleteFasilitator(id){if(!confirm('Hapus fasilitator?'))return;DB.set('fasilitator',DB.get('fasilitator').filter(f=>f.id!==id));renderFasilitator()}
 function renderAkun(){
-  $('akunTable').querySelector('tbody').innerHTML=DB.get('accounts').map(a=>`<tr><td><strong>${esc(a.username)}</strong></td><td>${esc(a.nama)}</td><td><span class="badge badge-${a.role==='admin'?'gold':'primary'}">${esc(a.role)}</span></td><td>${a.username!=='admin'?`<button class="btn btn-danger btn-sm" data-u="${esc(a.username)}" onclick="deleteAkun(this.dataset.u)">🗑️</button>`:'-'}</td></tr>`).join('');
+  $('akunTable').querySelector('tbody').innerHTML=DB.get('accounts').map(a=>`<tr><td><strong>${esc(a.username)}</strong></td><td>${esc(a.nama)}</td><td><span class="badge badge-${a.role==='admin'?'gold':'primary'}">${esc(a.role)}</span></td><td><div class="inline-btns"><button class="btn btn-info btn-sm" data-u="${esc(a.username)}" onclick="showEditAkun(this.dataset.u)">✏️</button>${a.username!=='admin'?`<button class="btn btn-danger btn-sm" data-u="${esc(a.username)}" onclick="deleteAkun(this.dataset.u)">🗑️</button>`:''}</div></td></tr>`).join('');
 }
+const slugUser=n=>String(n).split(',')[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20);
+function akunGuruList(a){const used=new Set(DB.get('accounts').map(x=>x.nama));return DB.get('fasilitator').map(f=>f.nama).filter(n=>!used.has(n)||n===a?.nama)}
+function akunForm(a,self){
+  const edit=!!a;
+  return `<div class="form-group"><label class="form-label">Nama ${edit?'':'(ketik untuk memilih dari daftar guru)'}</label><input id="akunNama" class="form-input" list="akunGuruList" autocomplete="off" value="${esc(a?.nama||'')}" ${edit?'':'oninput="akunPilihGuru()"'}><datalist id="akunGuruList">${akunGuruList(a).map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+  <div class="form-row"><div class="form-group"><label class="form-label">Username</label><input id="akunUser" class="form-input" value="${esc(a?.username||'')}" ${edit?'readonly style="background:#f1f3f2"':''}></div><div class="form-group"><label class="form-label">Role</label><select id="akunRole" class="form-select" ${self||a?.username==='admin'?'disabled':''}><option value="fasilitator" ${a?.role==='fasilitator'?'selected':''}>Fasilitator</option><option value="admin" ${a?.role==='admin'?'selected':''}>Admin</option></select></div></div>
+  ${self?'<div class="form-group"><label class="form-label">Password Lama (isi jika ingin ganti password)</label><input type="password" id="akunPassLama" class="form-input" autocomplete="current-password"></div>':''}
+  <div class="form-group"><label class="form-label">${edit?'Password Baru (kosongkan jika tidak diganti)':'Password'}</label><input type="password" id="akunPass" class="form-input" autocomplete="new-password"></div>`;
+}
+function akunPilihGuru(){const n=$('akunNama').value.trim();if(!$('akunUser').value&&akunGuruList().includes(n))$('akunUser').value=slugUser(n)}
 function showAddAkun(){
-  showModal('Tambah Akun',`<div class="form-row"><div class="form-group"><label class="form-label">Username</label><input id="akunUser" class="form-input"></div><div class="form-group"><label class="form-label">Password</label><input type="password" id="akunPass" class="form-input"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Nama</label><input id="akunNama" class="form-input"></div><div class="form-group"><label class="form-label">Role</label><select id="akunRole" class="form-select"><option value="fasilitator">Fasilitator</option><option value="admin">Admin</option></select></div></div>`,()=>{
+  showModal('Tambah Akun',akunForm(),()=>{
     const username=$('akunUser').value.trim(),password=$('akunPass').value,nama=$('akunNama').value.trim();
     if(!username||!password||!nama){alert('Semua field harus diisi!');return false}
+    if(password.length<4){alert('Password minimal 4 karakter.');return false}
     const l=DB.get('accounts');if(l.some(a=>a.username===username)){alert('Username sudah ada!');return false}
     l.push({username,password,nama,role:$('akunRole').value});DB.set('accounts',l);renderAkun();
+  });
+}
+function showEditAkun(u,self){
+  const l=DB.get('accounts'),a=l.find(x=>x.username===u);if(!a)return;
+  if(self!==true&&currentUser?.role!=='admin')return;
+  self=self===true||u===currentUser?.username;
+  showModal(self?'Akun Saya':'Edit Akun',akunForm(a,self),()=>{
+    const nama=$('akunNama').value.trim(),pw=$('akunPass').value;
+    if(!nama){alert('Nama harus diisi!');return false}
+    if(pw){
+      if(pw.length<4){alert('Password minimal 4 karakter.');return false}
+      if(self&&$('akunPassLama').value!==a.password){alert('Password lama salah!');return false}
+    }
+    const role=(self||a.username==='admin')?a.role:$('akunRole').value;
+    if(a.role==='admin'&&role!=='admin'&&l.filter(x=>x.role==='admin').length<2){alert('Harus ada minimal satu admin.');return false}
+    const rec={...a,nama,role,password:pw||a.password};
+    DB.set('accounts',l.map(x=>x.username===u?rec:x));
+    if(currentUser?.username===u){currentUser=rec;sessionStorage.setItem('ce_user',JSON.stringify(rec));
+      $('userName').textContent=$('greetingName').textContent=rec.nama;$('userAvatar').textContent=rec.nama.charAt(0).toUpperCase()}
+    if($('page-akun').classList.contains('active'))renderAkun();
   });
 }
 function deleteAkun(u){if(u==='admin'||u===currentUser?.username)return alert('Akun ini tidak bisa dihapus.');if(!confirm('Hapus akun?'))return;DB.set('accounts',DB.get('accounts').filter(a=>a.username!==u));renderAkun()}
@@ -1450,10 +1485,67 @@ $('aiInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendAIMessage()})
 ['loginUsername','loginPassword'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}));
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
+// ---------- Sinkronisasi Firebase (dipanggil dari modul Firebase) ----------
+window.fbUser=()=>currentUser?.username||'';
+window.fbKeys=['accounts','kelas','kelompok','siswa','fasilitator','produk','keuangan','rubrik','penilaian','penilaianIndividu','cfgNilai','keuVerif'];
+window.fbOnRemote=()=>{
+  const a=document.querySelector('.page.active');
+  if(!currentUser||!a||$('modal').classList.contains('active'))return;
+  const n=a.id.replace('page-','');
+  if(['penilaian','penilaian-individu'].includes(n))return; // jangan ganggu form yang sedang diisi
+  try{showPage(n)}catch(e){}
+};
+window.fbStatus=s=>{const e=$('syncStatus');if(!e)return;window.fbState=s;
+  e.className='sync-'+s;e.textContent=s==='ready'?'☁️ Tersinkron':s==='connecting'?'⏳ Menyinkronkan…':'⚠️ Offline / gagal sinkron'};
 // ---------- Start ----------
 migrateModel();initData();seedRealData();migrateEvent();
 try{let u=JSON.parse(sessionStorage.getItem('ce_user')||'null');if(!u){const r=localStorage.getItem('ce_remember');if(r){u={username:r};$('loginRemember').checked=true;$('loginUsername').value=r}}const acc=u&&DB.get('accounts').find(a=>a.username===u.username);if(acc){currentUser=acc;sessionStorage.setItem('ce_user',JSON.stringify(acc));showApp()}}catch(e){}
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+<div id="syncStatus" class="sync-connecting">⏳ Menyinkronkan…</div>
+<script>window.fbState='connecting';setTimeout(()=>{if(window.fbState==='connecting')window.fbStatus('offline')},8000)</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const firebaseConfig={
+  apiKey:"AIzaSyAzVoboqLDlbfvWe8SjUehenyK8Qy0WeBE",
+  authDomain:"cqentrepreneur.firebaseapp.com",
+  projectId:"cqentrepreneur",
+  storageBucket:"cqentrepreneur.firebasestorage.app",
+  messagingSenderId:"467412604547",
+  appId:"1:467412604547:web:6086cf85fbcdb473a1edb6"
+};
+const app=initializeApp(firebaseConfig);
+const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+const col=collection(db,'cq'),KEYS=new Set(window.fbKeys);
+let ready=false;
+const push=(k,json)=>{
+  if(!ready||!KEYS.has(k))return;
+  if(json.length>900000){console.warn('Data terlalu besar untuk Firestore:',k);window.fbStatus('offline');return}
+  setDoc(doc(col,k),{json,by:(window.fbUser&&window.fbUser())||'',at:new Date().toISOString()}).catch(e=>{console.error(e);window.fbStatus('offline')});
+};
+window.fbPush=push;
+// jika server tidak terjangkau dalam 8 detik, aplikasi tetap jalan memakai data lokal
+setTimeout(()=>{if(!ready)window.fbStatus('offline')},8000);
+onSnapshot(col,snap=>{
+  // cache kosong dari perangkat baru bukan berarti cloud kosong: tunggu jawaban server
+  if(!ready&&snap.metadata.fromCache&&snap.empty)return;
+  let changed=false;
+  snap.docChanges().forEach(ch=>{
+    if(ch.type==='removed'||ch.doc.metadata.hasPendingWrites)return;
+    const k=ch.doc.id;if(!KEYS.has(k))return;
+    const j=ch.doc.data().json;
+    if(typeof j==='string'&&localStorage.getItem('ce_'+k)!==j){localStorage.setItem('ce_'+k,j);changed=true}
+  });
+  if(!ready){
+    ready=true;
+    const inCloud=new Set(snap.docs.map(d=>d.id));
+    // data yang belum ada di cloud (pertama kali / kunci baru) diunggah dari lokal
+    KEYS.forEach(k=>{const v=localStorage.getItem('ce_'+k);if(v!==null&&!inCloud.has(k))push(k,v)});
+    window.fbStatus('ready');
+  }else if(window.fbState!=='ready')window.fbStatus('ready');
+  if(changed)window.fbOnRemote();
+},err=>{console.error(err);window.fbStatus('offline')});
 </script>
 </body>
 </html>
