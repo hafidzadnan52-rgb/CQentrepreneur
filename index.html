@@ -183,6 +183,26 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 #installBanner .ib-act{display:flex;flex-direction:column;gap:6px}
 #installBanner button{border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
 #installBanner .ib-yes{background:linear-gradient(135deg,#0B7A57,#064E3B);color:#fff}#installBanner .ib-no{background:#eef2ef;color:#4b5b54}
+
+/* ---- Jadwal ED & BD ---- */
+.jd-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:var(--rs);background:var(--bg);border-left:4px solid var(--primary);margin-bottom:10px}
+.jd-card.now{border-left-color:var(--bad);background:rgba(220,38,38,.07)}.jd-card.soon{border-left-color:var(--warn);background:rgba(245,158,11,.09)}
+.jd-day{min-width:62px;text-align:center;line-height:1.15}.jd-day b{display:block;font-size:26px;font-weight:800;color:var(--dark)}.jd-day small{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--mut)}
+.jd-info{flex:1;min-width:0}.jd-title{font-weight:700;font-size:15px}.jd-sub{font-size:13px;color:var(--mut)}
+.jd-chk{max-height:150px;overflow-y:auto;border:2px solid var(--bd);border-radius:var(--rs);padding:8px 12px;display:flex;flex-direction:column;gap:6px;font-size:14px}.jd-chk label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.jd-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:600px){.jd-quick{grid-template-columns:1fr}}
+
+.profile-wrap{position:relative}.user-profile{cursor:pointer}
+.profile-menu{display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:170px;background:var(--card);border-radius:var(--rs);box-shadow:var(--shl);border:1px solid var(--bd);overflow:hidden;z-index:200}
+.profile-menu.open{display:block}.profile-menu button{display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;font:inherit;font-size:14px;font-weight:600;cursor:pointer;color:var(--text)}
+.profile-menu button:hover{background:var(--bg)}.profile-menu .pm-out{color:var(--bad);border-top:1px solid var(--bd)}
+
+.user-avatar{overflow:hidden}.user-avatar svg{display:block;width:100%;height:100%}
+.av-ring{display:inline-block;border-radius:50%;overflow:hidden;line-height:0;vertical-align:middle;flex:none}
+.av-lbl{font-size:13px;font-weight:600;margin:4px 0 2px}.av-row{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px;align-items:center}
+.av-chip{padding:6px 12px;border:2px solid var(--bd);border-radius:50px;background:#fff;font:inherit;font-size:13px;cursor:pointer}.av-chip.on{border-color:var(--primary);background:rgba(8,127,91,.1);font-weight:700}
+.av-sw{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #cbd5d1;cursor:pointer;padding:0}.av-sw.on{box-shadow:0 0 0 3px var(--primary)}
+.av-pre{border:2px solid var(--bd);border-radius:50%;padding:0;background:none;cursor:pointer;line-height:0}.av-pre:hover{border-color:var(--primary)}
 </style>
 </head>
 <body>
@@ -209,6 +229,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
     <nav class="sidebar-menu">
       <div class="menu-section"><div class="menu-section-title">Main</div><div class="menu-item active" data-page="dashboard">📊 Dashboard</div></div>
       <div class="menu-section"><div class="menu-section-title">Entrepreneur</div>
+        <div class="menu-item" data-page="jadwal">📅 Jadwal ED &amp; BD</div>
         <div class="menu-item" data-page="penilaian">📝 Penilaian Kelompok</div>
         <div class="menu-item" data-page="penilaian-individu">👤 Penilaian Individu</div>
         <div class="menu-item" data-page="kelompok">👥 Kelompok</div>
@@ -232,11 +253,13 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
   <main class="main">
     <header class="topbar">
       <div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()">☰</button><strong id="breadcrumbText">Dashboard</strong></div>
-      <div class="user-profile" title="Edit akun saya" onclick="showEditAkun(currentUser.username,true)"><div class="user-avatar" id="userAvatar">U</div><div><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRole">Administrator</div></div></div>
+      <div class="profile-wrap"><div class="user-profile" title="Menu akun" role="button" tabindex="0" onclick="toggleProfileMenu(event)"><div class="user-avatar" id="userAvatar">U</div><div><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRole">Administrator</div></div></div>
+        <div class="profile-menu" id="profileMenu"><button type="button" onclick="closeProfileMenu();showEditAkun(currentUser.username,true)">✏️ Edit Akun</button><button type="button" class="pm-out" onclick="closeProfileMenu();if(confirm('Keluar dari aplikasi?'))doLogout()">🚪 Keluar</button></div></div>
     </header>
 
     <div class="page active" id="page-dashboard">
       <div class="dashboard-greeting"><div class="greeting-title">Assalamu'alaikum, <span id="greetingName">Admin</span> 👋</div><div>Pantau perkembangan Entrepreneur Day dengan lebih mudah.</div><div class="greeting-date">📅 <span id="currentDate"></span></div><div class="greeting-quote">“Sebaik-baik manusia adalah yang paling bermanfaat bagi manusia lainnya.”<small>(HR. Ahmad)</small></div></div>
+      <div id="jadwalReminder"></div>
       <div class="dash-slider" id="dashSlider" role="region" aria-roledescription="carousel" aria-label="Galeri inspirasi" hidden><div class="ds-track" id="dsTrack"></div><button class="ds-btn ds-prev" id="dsPrev" aria-label="Slide sebelumnya">&#8249;</button><button class="ds-btn ds-next" id="dsNext" aria-label="Slide berikutnya">&#8250;</button><div class="ds-dots" id="dsDots"></div><div class="ds-bar" id="dsBar"></div></div>
       <div class="stats-grid" id="statsGrid"></div>
       <div class="chart-grid">
@@ -252,7 +275,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
       <div id="kelSourceInfo"></div>
       <div class="card">
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Kegiatan</label><select id="penilaianKegiatan" class="form-select" onchange="renderKelPreview()"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="penilaianSesi" class="form-select" onchange="renderKelPreview()"><option value="1">1</option><option value="2">2</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="penilaianKelas" class="form-select" onchange="loadKelompok()"></select></div>
+          <div class="form-group"><label class="form-label">Kegiatan</label><select id="penilaianKegiatan" class="form-select" onchange="renderKelPreview()"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="penilaianSesi" class="form-select" onchange="renderKelPreview()"><option value="1">1</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="penilaianKelas" class="form-select" onchange="loadKelompok()"></select></div>
           <div class="form-group"><label class="form-label">Kelompok</label><select id="penilaianKelompok" class="form-select" onchange="renderKelPreview()"></select></div>
           <div class="form-group"><label class="form-label">Fasilitator</label><select id="penilaianFasilitator" class="form-select"></select></div>
         </div>
@@ -270,7 +293,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
       <div id="tab-ind-nilai"><div class="card">
         <div class="form-row">
           <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="indTanggal" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Kegiatan</label><select id="indKegiatan" class="form-select"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="indSesi" class="form-select"><option value="1">1</option><option value="2">2</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="indKelas" class="form-select" onchange="loadIndSiswa()"></select></div>
+          <div class="form-group"><label class="form-label">Kegiatan</label><select id="indKegiatan" class="form-select"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="indSesi" class="form-select"><option value="1">1</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="indKelas" class="form-select" onchange="loadIndSiswa()"></select></div>
           <div class="form-group"><label class="form-label">Siswa</label><select id="indSiswa" class="form-select"></select></div>
           <div class="form-group"><label class="form-label">Fasilitator</label><select id="indFasilitator" class="form-select"></select></div>
         </div>
@@ -326,7 +349,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 
     <div class="page" id="page-akun">
       <div class="page-header"><h1 class="page-title">🔐 Manajemen Akun</h1><p class="page-subtitle">Kelola akun pengguna sistem</p></div>
-      <div class="card"><div class="card-header"><div class="card-title">Daftar Akun</div><button class="btn btn-primary btn-sm" onclick="showAddAkun()">➕ Tambah Akun</button></div><div class="table-wrapper"><table id="akunTable"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Daftar Akun</div><div class="inline-btns"><button class="btn btn-success btn-sm" onclick="downloadAkunExcel()">📥 Download Akun (Excel)</button><button class="btn btn-primary btn-sm" onclick="showAddAkun()">➕ Tambah Akun</button></div></div><div class="table-wrapper"><table id="akunTable"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
     </div>
 
     <div class="page" id="page-analitik">
@@ -350,7 +373,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
     </div>
 
     <div class="page" id="page-nilai-akhir">
-      <div class="page-header"><h1 class="page-title">🏅 Nilai Akhir Siswa</h1><p class="page-subtitle">Gabungan nilai individu + kelompok dari Entrepreneur Day dan Business Day (1–2 kali pelaksanaan)</p></div>
+      <div class="page-header"><h1 class="page-title">🏅 Nilai Akhir Siswa</h1><p class="page-subtitle">Gabungan nilai individu + kelompok dari Entrepreneur Day dan Business Day (satu atau lebih kali pelaksanaan)</p></div>
       <div class="card"><div class="card-title" style="margin-bottom:12px">⚙️ Aturan Penggabungan</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Bobot Entrepreneur Day (%)</label><input type="number" id="cfgED" class="form-input" min="0" max="100" onchange="saveCfg()"></div>
@@ -395,6 +418,17 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
       <div class="card"><div class="card-title" style="margin-bottom:14px">🖼️ Galeri Foto</div><div class="photo-grid" id="photoGallery"></div></div>
     </div>
 
+        <div class="page" id="page-jadwal">
+      <div class="page-header"><h1 class="page-title">📅 Jadwal ED &amp; BD</h1><p class="page-subtitle">Pengingat tanggal pelaksanaan Entrepreneur Day dan Business Day</p></div>
+      <div class="card"><div class="card-title" style="margin-bottom:14px">🔔 Akan Datang</div><div id="jadwalUpcoming"></div></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Semua Jadwal</div>
+          <div class="inline-btns"><select id="jdFilter" class="form-select" style="width:auto" onchange="renderJadwal()"><option value="all">Semua</option><option value="next">Akan datang</option><option value="past">Sudah lewat</option></select><span id="jdAdminBtns"></span></div></div>
+        <label id="jdMineWrap" style="display:none;font-size:14px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="jdMine" onchange="renderJadwal()"> Tampilkan jadwal tugas saya saja</label>
+        <div class="table-wrapper"><table id="jadwalTable"><thead><tr><th>Tanggal</th><th>Kegiatan</th><th>Kelas</th><th>Fasilitator</th><th>Lokasi / Catatan</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
     <div class="page" id="page-pengaturan">
       <div class="page-header"><h1 class="page-title">⚙️ Pengaturan Sistem</h1><p class="page-subtitle">Konfigurasi aplikasi dan integrasi</p></div>
       <div class="card">
@@ -409,7 +443,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         </div>
         <div class="settings-section">
           <div class="settings-section-title">📊 Informasi Sistem</div>
-          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.11.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
+          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.12.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">⚠️ Zona Berbahaya</div>
@@ -531,6 +565,10 @@ function doLogin(){
 }
 function setPw(show){const i=$('loginPassword'),b=$('pwEye');i.type=show?'text':'password';b.classList.toggle('show',show);b.setAttribute('aria-label',show?'Sembunyikan password':'Tampilkan password')}
 function togglePw(){setPw($('loginPassword').type==='password')}
+function toggleProfileMenu(e){e&&e.stopPropagation();$('profileMenu').classList.toggle('open')}
+function closeProfileMenu(){$('profileMenu').classList.remove('open')}
+document.addEventListener('click',e=>{if(!e.target.closest('.profile-wrap'))closeProfileMenu()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProfileMenu()});
 function doLogout(){
   sessionStorage.removeItem('ce_user');currentUser=null;$('app').style.display='none';$('loginPage').style.display='flex';
   try{localStorage.removeItem('ce_remember')}catch(e){}
@@ -540,7 +578,7 @@ function showApp(){
   $('loginPage').style.display='none';$('app').style.display='block';
   $('userName').textContent=$('greetingName').textContent=currentUser.nama;
   $('userRole').textContent=currentUser.role==='admin'?'Administrator':'Fasilitator';
-  $('userAvatar').textContent=currentUser.nama.charAt(0).toUpperCase();
+  setHeaderAvatar(currentUser);
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=currentUser.role==='admin'?'flex':'none');
   $('currentDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   $('indTanggal').value=today();
@@ -569,7 +607,7 @@ function showPage(name){
   const mi=document.querySelector(`.menu-item[data-page="${name}"]`);
   $('breadcrumbText').textContent=mi?mi.textContent.trim():name;
   $('sidebar').classList.remove('active');window.scrollTo(0,0);
-  const init={dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan}[name];
+  const init={dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan,jadwal:initJadwal}[name];
   if(init)init();
 }
 document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(i=>i.addEventListener('click',()=>showPage(i.dataset.page)));
@@ -609,6 +647,8 @@ const aspectAvg=pen=>ASPEK.map((a,i)=>pen.length?+(pen.reduce((s,p)=>s+(p.scores
 const classAvg=(pen,k)=>{const p=pen.filter(x=>x.kelasId===k.id);return p.length?+(p.reduce((s,x)=>s+parseFloat(x.total),0)/p.length).toFixed(1):0};
 // penilaian terbaru per kelompok (agar tidak dobel)
 const KEG={ED:'Entrepreneur Day',BD:'Business Day'};
+const MAX_SESI=10;
+const sesiOpts=(sel)=>Array.from({length:Math.max(MAX_SESI,+sel||0)},(_,i)=>`<option value="${i+1}" ${(i+1)==sel?'selected':''}>${i+1}</option>`).join('');
 const kegLbl=p=>`<span class="badge badge-${p.kegiatan==='BD'?'warning':'info'}">${p.kegiatan==='BD'?'BD':'ED'} #${p.sesi||1}</span>`;
 const CFG_DEF={ED:50,BD:50,Ind:60,Kel:40,Kkm:71,mode:'avg',kelSource:'individu'};
 const cfg=()=>({...CFG_DEF,...(DB.get('cfgNilai',{})||{})});
@@ -647,6 +687,89 @@ const latestPen=()=>{const m=new Map();DB.get('penilaian').forEach(p=>{if(!m.has
   return [...m.values()].map(rs=>{const last=rs[rs.length-1],f=combineEvents(rs,p=>parseFloat(p.total)).final;
     return {...last,total:f.toFixed(2),grade:getGrade(f),scores:ASPEK.map((a,i)=>rs.reduce((x,p)=>x+(p.scores[i]||0),0)/rs.length)}})};
 
+// ---------- Jadwal ED & BD (pengingat) ----------
+const dayDiff=s=>{const [y,m,d]=String(s).split('-').map(Number),t=new Date();return Math.round((new Date(y,m-1,d)-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5)};
+const fmtTgl=s=>{if(!s)return '-';const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};
+const fmtTglPendek=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})};
+function jdStatus(j){
+  const a=dayDiff(j.tanggal),e=j.tanggalAkhir?dayDiff(j.tanggalAkhir):a;
+  if(e<0)return {k:'lewat',t:'Selesai',c:'',past:true};
+  if(a<=0)return {k:'now',t:(a===0&&e===0)?'Hari ini':'Berlangsung',c:'danger'};
+  if(a===1)return {k:'soon',t:'Besok',c:'warning'};
+  return {k:a<=7?'soon':'next',t:'H-'+a,c:a<=7?'warning':'success'};
+}
+const jdBadge=st=>st.past?'<span class="badge" style="background:#E5E7EB;color:#6B7280">Selesai</span>':`<span class="badge badge-${st.c}">${st.t}</span>`;
+const jdSorted=()=>DB.get('jadwal').slice().sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||'')||(a.kegiatan||'').localeCompare(b.kegiatan||''));
+const jdKelasLbl=j=>{const ids=j.kelasIds||[];if(!ids.length)return 'Semua kelas';const k=DB.get('kelas');return ids.map(i=>k.find(x=>x.id===i)?.nama||i).join(', ')};
+const jdFasLbl=j=>{const ids=j.fasIds||[];if(!ids.length)return 'Semua fasilitator';const f=DB.get('fasilitator');return ids.map(i=>f.find(x=>x.id==i)?.nama||'?').join(', ')};
+function jdMine(j){if(currentUser?.role==='admin')return false;const f=DB.get('fasilitator').find(x=>x.nama===currentUser?.nama);return !!f&&(j.fasIds||[]).some(i=>i==f.id)}
+const jdTglLbl=j=>j.tanggalAkhir&&j.tanggalAkhir!==j.tanggal?`${fmtTglPendek(j.tanggal)} – ${fmtTglPendek(j.tanggalAkhir)}`:fmtTgl(j.tanggal);
+function jdCard(j){
+  const st=jdStatus(j),[y,m,d]=j.tanggal.split('-').map(Number),dt=new Date(y,m-1,d);
+  return `<div class="jd-card ${st.k}"><div class="jd-day"><b>${d}</b><small>${dt.toLocaleDateString('id-ID',{month:'short'})}</small></div>
+   <div class="jd-info"><div class="jd-title">${esc(KEG[j.kegiatan]||j.kegiatan)} ke-${esc(j.sesi||1)} ${jdMine(j)?'<span class="badge badge-gold">Tugas Anda</span>':''}</div>
+   <div class="jd-sub">${esc(jdTglLbl(j))} · ${esc(jdKelasLbl(j))}${j.lokasi?' · 📍 '+esc(j.lokasi):''}</div>${j.catatan?`<div class="jd-sub">📝 ${esc(j.catatan)}</div>`:''}</div>${jdBadge(st)}</div>`;
+}
+function jdUpcoming(){const l=jdSorted().filter(j=>j.tanggal&&!jdStatus(j).past);l.sort((a,b)=>Number(jdMine(b))-Number(jdMine(a)));return l}
+function renderJadwalReminder(){
+  const el=$('jadwalReminder');if(!el)return;
+  const up=jdUpcoming(),isAdm=currentUser?.role==='admin';
+  const body=up.length?up.slice(0,3).map(jdCard).join('')+(up.length>3?`<div style="font-size:13px;color:var(--mut)">+${up.length-3} jadwal lainnya di menu Jadwal</div>`:''):`<div style="color:var(--mut);font-size:14px">Belum ada jadwal yang akan datang.${isAdm?' Atur tanggalnya di menu <a href="#" onclick="showPage(\'jadwal\');return false" style="color:var(--primary);font-weight:600">Jadwal ED &amp; BD</a>.':''}</div>`;
+  el.innerHTML=`<div class="card"><div class="card-header" style="margin-bottom:12px"><div class="card-title">🔔 Pengingat Jadwal</div><button class="btn btn-info btn-sm" onclick="showPage('jadwal')">Lihat semua</button></div>${body}</div>`;
+}
+function initJadwal(){renderJadwal()}
+function renderJadwal(){
+  const isAdm=currentUser?.role==='admin';
+  $('jdAdminBtns').innerHTML=isAdm?'<button class="btn btn-info btn-sm" onclick="showQuickJadwal()">⚡ Isi Cepat Semester</button> <button class="btn btn-primary btn-sm" onclick="showAddJadwal()">➕ Tambah Jadwal</button>':'';
+  const hasFas=!isAdm&&!!DB.get('fasilitator').find(x=>x.nama===currentUser?.nama);
+  $('jdMineWrap').style.display=hasFas?'block':'none';
+  const up=jdUpcoming();
+  $('jadwalUpcoming').innerHTML=up.length?up.slice(0,4).map(jdCard).join(''):`<div class="empty-state"><div class="empty-state-icon">📅</div>Belum ada jadwal yang akan datang.${isAdm?'<br>Klik <strong>Isi Cepat Semester</strong> untuk memasukkan tanggal ED &amp; BD sekaligus.':''}</div>`;
+  const f=$('jdFilter').value,onlyMine=hasFas&&$('jdMine').checked;
+  const list=jdSorted().filter(j=>(f==='all'||(f==='past')===jdStatus(j).past)&&(!onlyMine||jdMine(j)));
+  $('jadwalTable').querySelector('tbody').innerHTML=list.map(j=>`<tr><td style="white-space:nowrap"><strong>${esc(jdTglLbl(j))}</strong></td><td>${kegLbl(j)}</td><td>${esc(jdKelasLbl(j))}</td><td>${esc(jdFasLbl(j))}${jdMine(j)?' <span class="badge badge-gold">Anda</span>':''}</td><td>${esc([j.lokasi,j.catatan].filter(Boolean).join(' — ')||'-')}</td><td>${jdBadge(jdStatus(j))}</td><td>${isAdm?`<div class="inline-btns"><button class="btn btn-info btn-sm" onclick="showEditJadwal(${j.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteJadwal(${j.id})">🗑️</button></div>`:''}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--mut)">Belum ada jadwal</td></tr>';
+}
+function jdForm(j={}){
+  const ks=j.kelasIds||[],fs=j.fasIds||[];
+  return `<div class="form-group"><label class="form-label">Kegiatan</label><select id="jdKeg" class="form-select"><option value="ED" ${j.kegiatan==='ED'?'selected':''}>Entrepreneur Day (di sekolah)</option><option value="BD" ${j.kegiatan==='BD'?'selected':''}>Business Day (di luar sekolah)</option></select></div>
+  <div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="jdSesi" class="form-select">${sesiOpts(j.sesi||1)}</select></div>
+  <div class="form-group"><label class="form-label">Tanggal Pelaksanaan</label><input type="date" id="jdTgl" class="form-input" value="${esc(j.tanggal||'')}"></div>
+  <div class="form-group"><label class="form-label">Tanggal Selesai <small style="font-weight:400;color:var(--mut)">(opsional, jika lebih dari sehari)</small></label><input type="date" id="jdTglAkhir" class="form-input" value="${esc(j.tanggalAkhir||'')}"></div>
+  <div class="form-group"><label class="form-label">Kelas <small style="font-weight:400;color:var(--mut)">(kosongkan = semua kelas)</small></label><div class="jd-chk">${DB.get('kelas').map(k=>`<label><input type="checkbox" class="jdKelas" value="${esc(k.id)}" ${ks.includes(k.id)?'checked':''}> ${esc(k.nama)}</label>`).join('')}</div></div>
+  <div class="form-group"><label class="form-label">Fasilitator <small style="font-weight:400;color:var(--mut)">(kosongkan = semua)</small></label><div class="jd-chk">${DB.get('fasilitator').map(f=>`<label><input type="checkbox" class="jdFas" value="${f.id}" ${fs.some(i=>i==f.id)?'checked':''}> ${esc(f.nama)}</label>`).join('')||'<span style="color:var(--mut)">Belum ada fasilitator</span>'}</div></div>
+  <div class="form-group"><label class="form-label">Lokasi</label><input id="jdLokasi" class="form-input" placeholder="mis. Halaman sekolah / Pasar Minggu" value="${esc(j.lokasi||'')}"></div>
+  <div class="form-group"><label class="form-label">Catatan</label><textarea id="jdCatatan" class="form-textarea" placeholder="mis. Bawa perlengkapan jualan, kumpul 06.30">${esc(j.catatan||'')}</textarea></div>`;
+}
+function readJdForm(base){
+  const tgl=$('jdTgl').value,akhir=$('jdTglAkhir').value;
+  if(!tgl){alert('Tanggal pelaksanaan wajib diisi!');return null}
+  if(akhir&&akhir<tgl){alert('Tanggal selesai tidak boleh sebelum tanggal mulai!');return null}
+  return {...base,kegiatan:$('jdKeg').value,sesi:+$('jdSesi').value,tanggal:tgl,tanggalAkhir:akhir,
+    kelasIds:[...document.querySelectorAll('.jdKelas:checked')].map(x=>x.value),
+    fasIds:[...document.querySelectorAll('.jdFas:checked')].map(x=>+x.value),
+    lokasi:$('jdLokasi').value.trim(),catatan:$('jdCatatan').value.trim()};
+}
+function showAddJadwal(){showModal('Tambah Jadwal',jdForm(),()=>{const r=readJdForm({id:uid()});if(!r)return false;const l=DB.get('jadwal');l.push(r);DB.set('jadwal',l);renderJadwal()})}
+function showEditJadwal(id){const l=DB.get('jadwal'),i=l.findIndex(x=>x.id==id);if(i<0)return;showModal('Edit Jadwal',jdForm(l[i]),()=>{const r=readJdForm(l[i]);if(!r)return false;l[i]=r;DB.set('jadwal',l);renderJadwal()})}
+function deleteJadwal(id){if(!confirm('Hapus jadwal ini?'))return;DB.set('jadwal',DB.get('jadwal').filter(x=>x.id!=id));renderJadwal()}
+function jdQuickRows(){
+  const old={};document.querySelectorAll('.jdQuick').forEach(i=>{if(i.value)old[i.dataset.k+'|'+i.dataset.s]=i.value});
+  const n=+$('jdQuickN').value;let h='';
+  for(let x=1;x<=n;x++)['ED','BD'].forEach(k=>{h+=`<div class="form-group"><label class="form-label">${KEG[k]} ke-${x}</label><input type="date" class="form-input jdQuick" data-k="${k}" data-s="${x}" value="${old[k+'|'+x]||''}"></div>`});
+  $('jdQuickRows').innerHTML=h;
+}
+function showQuickJadwal(){
+  showModal('Isi Cepat Jadwal Semester',`<p style="font-size:14px;color:var(--mut);margin-bottom:14px">Isi tanggal yang sudah ditetapkan saja, sisanya boleh dikosongkan. Berlaku untuk semua kelas &amp; fasilitator (bisa diubah per jadwal setelahnya).</p>
+  <div class="form-group"><label class="form-label">Jumlah pelaksanaan per kegiatan</label><select id="jdQuickN" class="form-select" onchange="jdQuickRows()">${Array.from({length:MAX_SESI},(_,i)=>`<option value="${i+1}" ${i===1?'selected':''}>${i+1}</option>`).join('')}</select></div>
+  <div class="jd-quick" id="jdQuickRows"></div>`,()=>{
+    const l=DB.get('jadwal');let n=0;
+    document.querySelectorAll('.jdQuick').forEach(i=>{if(!i.value)return;if(l.some(x=>x.kegiatan===i.dataset.k&&x.sesi==i.dataset.s&&x.tanggal===i.value&&!(x.kelasIds||[]).length))return;
+      l.push({id:uid()+n++,kegiatan:i.dataset.k,sesi:+i.dataset.s,tanggal:i.value,tanggalAkhir:'',kelasIds:[],fasIds:[],lokasi:'',catatan:''})});
+    if(!n){alert('Belum ada tanggal yang diisi.');return false}
+    DB.set('jadwal',l);renderJadwal()});
+  jdQuickRows();
+}
+
 // ---------- Dashboard ----------
 function renderDashboard(){
   const pen=latestPen(),kelompok=DB.get('kelompok'),kelas=DB.get('kelas'),keu=DB.get('keuangan');
@@ -668,12 +791,13 @@ function renderDashboard(){
   DB.get('penilaian').slice(-3).reverse().forEach(p=>act.push({i:'✅',t:`Penilaian ${p.kelasNama} - ${p.kelompok}`,w:p.waktu}));
   DB.get('foto').slice(-2).reverse().forEach(f=>act.push({i:'📸',t:`Foto ${f.kelasNama} - ${kelName(f.kelompokId)}`,w:f.waktu}));
   act.sort((a,b)=>new Date(b.w)-new Date(a.w));
+  renderJadwalReminder();
   $('activityList').innerHTML=act.length?act.map(a=>`<div class="activity-item"><div class="activity-icon">${a.i}</div><div><div class="activity-text">${esc(a.t)}</div><div class="activity-time">${timeAgo(a.w)}</div></div></div>`).join(''):'<div class="empty-state">Belum ada aktivitas</div>';
 }
 
 // ---------- Penilaian kelompok ----------
 function initPenilaian(){
-  keep('penilaianKelas',kelasOpts());keep('penilaianFasilitator',fasOpts());
+  keep('penilaianKelas',kelasOpts());keep('penilaianFasilitator',fasOpts());keep('penilaianSesi',sesiOpts());
   if(currentUser?.role==='fasilitator'){const f=DB.get('fasilitator').find(x=>x.nama===currentUser.nama);if(f)$('penilaianFasilitator').value=f.id}
   loadKelompok();
   $('assessmentGrid').innerHTML=ASPEK.map((a,i)=>`<div class="assessment-item"><div class="assessment-label"><span>${a.nama} (${a.bobot*100}%)</span><span class="assessment-value" id="val${i}">0</span></div><input type="range" class="assessment-slider" id="score${i}" min="0" max="100" value="0" oninput="$('val${i}').textContent=this.value;calcTotal()"></div>`).join('');
@@ -713,7 +837,7 @@ function resetPenilaian(){ASPEK.forEach((a,i)=>{$('score'+i).value=0;$('val'+i).
 
 // ---------- Penilaian individu ----------
 function initPenilaianIndividu(){
-  keep('indKelas',kelasOpts());keep('indFasilitator',fasOpts());
+  keep('indKelas',kelasOpts());keep('indFasilitator',fasOpts());keep('indSesi',sesiOpts());
   keep('rekapIndKelas',kelasOpts(true));keep('rekapIndFas',fasOpts(true));
   loadIndSiswa();renderIndRubrik();renderRekapInd();renderRubrikList();
 }
@@ -874,7 +998,7 @@ function renderProduk(){
 const kelompokOpts=()=>DB.get('kelompok').map(k=>`<option value="${k.id}">${esc(k.nama)}</option>`).join('');
 function prodForm(p){
   const kat=['Makanan Berat','Makanan Ringan','Minuman','Kerajinan','Jasa'];
-  return `<div class="form-group"><label class="form-label">Nama Produk</label><input id="prodNama" class="form-input" value="${esc(p?.nama||'')}"></div><div class="form-group"><label class="form-label">Kategori</label><select id="prodKategori" class="form-select">${kat.map(x=>`<option ${p?.kategori===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="form-row"><div class="form-group"><label class="form-label">Harga Jual / porsi</label><input type="number" min="0" id="prodHarga" class="form-input" value="${p?.hargaJual??''}"></div><div class="form-group"><label class="form-label">Harga Modal / porsi</label><input type="number" min="0" id="prodModal" class="form-input" value="${p?.hargaModal??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Jumlah Dibuat</label><input type="number" min="0" id="prodDibuat" class="form-input" value="${p?.dibuat??''}"></div><div class="form-group"><label class="form-label">Jumlah Terjual</label><input type="number" min="0" id="prodTerjual" class="form-input" value="${p?.terjual??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Kelas</label><select id="prodKelas" class="form-select" onchange="prodGantiKelas()">${kelasOpts()}</select></div><div class="form-group"><label class="form-label">Kelompok</label><select id="prodKelompok" class="form-select"></select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Kegiatan</label><select id="prodKegiatan" class="form-select"><option value="ED">Entrepreneur Day</option><option value="BD">Business Day</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="prodSesi" class="form-select"><option value="1">1</option><option value="2">2</option></select></div></div><p style="font-size:13px;color:var(--mut)">Laporan keuangan dihitung otomatis: modal = modal/porsi × dibuat, penjualan = harga jual × terjual. Jumlah terjual bisa diisi/diedit setelah jualan selesai. Menu tiap pelaksanaan dicatat sebagai produk terpisah.</p>`;
+  return `<div class="form-group"><label class="form-label">Nama Produk</label><input id="prodNama" class="form-input" value="${esc(p?.nama||'')}"></div><div class="form-group"><label class="form-label">Kategori</label><select id="prodKategori" class="form-select">${kat.map(x=>`<option ${p?.kategori===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="form-row"><div class="form-group"><label class="form-label">Harga Jual / porsi</label><input type="number" min="0" id="prodHarga" class="form-input" value="${p?.hargaJual??''}"></div><div class="form-group"><label class="form-label">Harga Modal / porsi</label><input type="number" min="0" id="prodModal" class="form-input" value="${p?.hargaModal??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Jumlah Dibuat</label><input type="number" min="0" id="prodDibuat" class="form-input" value="${p?.dibuat??''}"></div><div class="form-group"><label class="form-label">Jumlah Terjual</label><input type="number" min="0" id="prodTerjual" class="form-input" value="${p?.terjual??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Kelas</label><select id="prodKelas" class="form-select" onchange="prodGantiKelas()">${kelasOpts()}</select></div><div class="form-group"><label class="form-label">Kelompok</label><select id="prodKelompok" class="form-select"></select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Kegiatan</label><select id="prodKegiatan" class="form-select"><option value="ED">Entrepreneur Day</option><option value="BD">Business Day</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="prodSesi" class="form-select">${sesiOpts()}</select></div></div><p style="font-size:13px;color:var(--mut)">Laporan keuangan dihitung otomatis: modal = modal/porsi × dibuat, penjualan = harga jual × terjual. Jumlah terjual bisa diisi/diedit setelah jualan selesai. Menu tiap pelaksanaan dicatat sebagai produk terpisah.</p>`;
 }
 function prodGantiKelas(sel){
   const k=DB.get('kelompok').filter(x=>x.kelasId===$('prodKelas').value);
@@ -915,7 +1039,7 @@ function renderKeuangan(){
 }
 function showAddKeuangan(){
   if(!DB.get('kelompok').length)return alert('Buat kelompok terlebih dahulu.');
-  showModal('Tambah Laporan Keuangan',`<div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="keuTanggal" class="form-input" value="${today()}"></div><div class="form-group"><label class="form-label">Kegiatan</label><select id="keuKegiatan" class="form-select"><option value="ED">Entrepreneur Day</option><option value="BD">Business Day</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="keuSesi" class="form-select"><option value="1">1</option><option value="2">2</option></select></div><div class="form-group"><label class="form-label">Kelompok</label><select id="keuKelompok" class="form-select">${kelompokOpts()}</select></div><div class="form-row"><div class="form-group"><label class="form-label">Modal</label><input type="number" min="0" id="keuModal" class="form-input"></div><div class="form-group"><label class="form-label">Penjualan</label><input type="number" min="0" id="keuPenjualan" class="form-input"></div></div><p style="font-size:13px;color:var(--mut)">Keuntungan dihitung otomatis: penjualan − modal. Catatan: bila produk kelompok untuk pelaksanaan ini sudah diisi jumlah dibuat/terjual, laporan memakai data produk (🔗) dan input manual ini diabaikan.</p>`,()=>{
+  showModal('Tambah Laporan Keuangan',`<div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="keuTanggal" class="form-input" value="${today()}"></div><div class="form-group"><label class="form-label">Kegiatan</label><select id="keuKegiatan" class="form-select"><option value="ED">Entrepreneur Day</option><option value="BD">Business Day</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="keuSesi" class="form-select">${sesiOpts()}</select></div><div class="form-group"><label class="form-label">Kelompok</label><select id="keuKelompok" class="form-select">${kelompokOpts()}</select></div><div class="form-row"><div class="form-group"><label class="form-label">Modal</label><input type="number" min="0" id="keuModal" class="form-input"></div><div class="form-group"><label class="form-label">Penjualan</label><input type="number" min="0" id="keuPenjualan" class="form-input"></div></div><p style="font-size:13px;color:var(--mut)">Keuntungan dihitung otomatis: penjualan − modal. Catatan: bila produk kelompok untuk pelaksanaan ini sudah diisi jumlah dibuat/terjual, laporan memakai data produk (🔗) dan input manual ini diabaikan.</p>`,()=>{
     const modal=parseInt($('keuModal').value)||0,jual=parseInt($('keuPenjualan').value)||0;
     const l=DB.raw('keuangan');l.push({id:uid(),kegiatan:$('keuKegiatan').value,sesi:+$('keuSesi').value,tanggal:$('keuTanggal').value||today(),kelompokId:+$('keuKelompok').value,modal,penjualan:jual,keuntungan:jual-modal,status:'pending'});
     DB.set('keuangan',l);renderKeuangan();
@@ -991,32 +1115,129 @@ function showImportFasilitator(){
   });
 }
 function deleteFasilitator(id){if(!confirm('Hapus fasilitator?'))return;DB.set('fasilitator',DB.get('fasilitator').filter(f=>f.id!==id));renderFasilitator()}
+async function downloadAkunExcel(){
+  if(currentUser?.role!=='admin')return;
+  if(!window.ExcelJS)return alert('Library Excel belum termuat. Pastikan perangkat terhubung internet lalu muat ulang halaman.');
+  const list=DB.get('accounts').filter(a=>a.role!=='admin');
+  if(!list.length)return alert('Belum ada akun guru/fasilitator untuk diunduh.');
+  if(!confirm(`File ini berisi username & password ${list.length} akun guru (akun admin tidak ikut diunduh demi keamanan). Kirim hanya ke grup guru yang dituju. Lanjutkan?`))return;
+  const wb=new ExcelJS.Workbook();wb.creator='Cahaya Entrepreneur';wb.created=new Date();
+  const ws=wb.addWorksheet('Akun Guru',{views:[{showGridLines:false}]});
+  ws.columns=[{width:6},{width:36},{width:22},{width:20},{width:16}];
+  const thin={style:'thin',color:{argb:'FFD1D5DB'}},bd={top:thin,left:thin,bottom:thin,right:thin};
+  ws.mergeCells('A1:E1');const t=ws.getCell('A1');t.value='AKUN APLIKASI CAHAYA ENTREPRENEUR';t.font={bold:true,size:16,color:{argb:'FFFFFFFF'}};t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF064E3B'}};t.alignment={horizontal:'center',vertical:'middle'};ws.getRow(1).height=32;
+  ws.mergeCells('A2:E2');ws.getCell('A2').value="SMP TahfizhPreneur Cahaya Qur'an";ws.getCell('A2').font={bold:true,size:11,color:{argb:'FF064E3B'}};ws.getCell('A2').alignment={horizontal:'center'};
+  let r=3;
+  if(/^https?:$/.test(location.protocol)){ws.mergeCells(`A${r}:E${r}`);const c=ws.getCell(`A${r}`);c.value={text:'Link aplikasi: '+location.origin+location.pathname,hyperlink:location.origin+location.pathname};c.font={color:{argb:'FF1D4ED8'},underline:true};c.alignment={horizontal:'center'};r++}
+  ws.mergeCells(`A${r}:E${r}`);const n=ws.getCell(`A${r}`);n.value='Mohon dijaga kerahasiaannya. Setelah masuk, klik profil (pojok kanan atas) → Edit Akun untuk mengganti password.';n.font={italic:true,size:10,color:{argb:'FF6B7280'}};n.alignment={horizontal:'center',wrapText:true};ws.getRow(r).height=28;r+=2;
+  const hr=ws.getRow(r);['No','Nama','Username','Password','Peran'].forEach((h,i)=>{const c=hr.getCell(i+1);c.value=h;c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF087F5B'}};c.alignment={horizontal:'center',vertical:'middle'};c.border=bd});hr.height=24;
+  list.forEach((a,i)=>{const row=ws.getRow(r+1+i);[i+1,a.nama,a.username,a.password,'Fasilitator'].forEach((v,j)=>{const c=row.getCell(j+1);c.value=String(v??'');if(j===0)c.value=i+1;c.border=bd;c.alignment={horizontal:j===0||j===4?'center':'left',vertical:'middle'};if(i%2)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F7F5'}}});row.height=22});
+  const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  a.download=`Akun_Guru_Cahaya_Entrepreneur_${today()}.xlsx`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
 function renderAkun(){
-  $('akunTable').querySelector('tbody').innerHTML=DB.get('accounts').map(a=>`<tr><td><strong>${esc(a.username)}</strong></td><td>${esc(a.nama)}</td><td><span class="badge badge-${a.role==='admin'?'gold':'primary'}">${esc(a.role)}</span></td><td><div class="inline-btns"><button class="btn btn-info btn-sm" data-u="${esc(a.username)}" onclick="showEditAkun(this.dataset.u)">✏️</button>${a.username!=='admin'?`<button class="btn btn-danger btn-sm" data-u="${esc(a.username)}" onclick="deleteAkun(this.dataset.u)">🗑️</button>`:''}</div></td></tr>`).join('');
+  $('akunTable').querySelector('tbody').innerHTML=DB.get('accounts').map(a=>`<tr><td>${a.avatar?avatarHTML(a.avatar,30)+' ':''}<strong>${esc(a.username)}</strong></td><td>${esc(a.nama)}</td><td><span class="badge badge-${a.role==='admin'?'gold':'primary'}">${esc(a.role)}</span></td><td><div class="inline-btns"><button class="btn btn-info btn-sm" data-u="${esc(a.username)}" onclick="showEditAkun(this.dataset.u)">✏️</button>${a.username!=='admin'?`<button class="btn btn-danger btn-sm" data-u="${esc(a.username)}" onclick="deleteAkun(this.dataset.u)">🗑️</button>`:''}</div></td></tr>`).join('');
 }
 const slugUser=n=>String(n).split(',')[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20);
 function akunGuruList(a){const used=new Set(DB.get('accounts').map(x=>x.nama));return DB.get('fasilitator').map(f=>f.nama).filter(n=>!used.has(n)||n===a?.nama)}
+// ---------- Avatar akun (SVG) ----------
+const AV_SKIN=['#FDE0C8','#F5CBA7','#E0AC84','#C68E63','#8D5A3C'];
+const AV_HAIRC=['#1F1A17','#3B2A20','#6B4423','#9A9A9A','#1E2A44','#C9A86A'];
+const AV_HEADC=['#1F2937','#6B7280','#E5E7EB','#F8F4EA','#B08968','#8B5E4B','#E8A5B3','#C48B9F','#7C8FB5','#2F3E5C','#5E7F5A','#A89BC9'];
+const AV_TOPC=['#FFFFFF','#1F2937','#2F3E5C','#5E7F5A','#8B3A3A','#B08968','#E8A5B3','#7C8FB5'];
+const AV_BGC=['#D1FAE5','#E0F2FE','#FEF3C7','#FCE7F3','#EDE9FE','#E5E7EB'];
+const AV_DEF={g:'f',skin:1,hair:0,hairC:0,head:'hijab',headC:'#2F3E5C',beard:0,veil:0,glasses:0,top:'#FFFFFF',bg:'#D1FAE5'};
+const AV_PRESETS=[
+ {n:'Muslimah berhijab',v:{g:'f',skin:1,head:'hijab',headC:'#B08968',top:'#E8A5B3',bg:'#FCE7F3'}},
+ {n:'Muslimah bercadar',v:{g:'f',skin:1,head:'hijab',headC:'#1F2937',veil:1,top:'#1F2937',bg:'#E5E7EB'}},
+ {n:'Kerudung instan',v:{g:'f',skin:0,head:'kerudung',headC:'#7C8FB5',top:'#FFFFFF',bg:'#E0F2FE'}},
+ {n:'Ikhwan berpeci & berjenggot',v:{g:'m',skin:2,head:'peci',headC:'#1F2937',beard:2,top:'#FFFFFF',bg:'#D1FAE5'}},
+ {n:'Ikhwan bersorban',v:{g:'m',skin:1,head:'sorban',headC:'#F8F4EA',beard:1,top:'#5E7F5A',bg:'#FEF3C7'}},
+ {n:'Ikhwan berkacamata',v:{g:'m',skin:1,hair:1,hairC:1,head:'none',glasses:1,top:'#2F3E5C',bg:'#EDE9FE'}}];
+const AV_HAIR_FRONT=['M28 42Q24 16 50 15Q76 16 72 42Q70 30 50 27Q30 30 28 42Z','M27 44Q22 14 52 14Q78 16 73 44Q70 32 56 26Q42 34 29 36Z','M28 42Q22 18 40 13Q50 8 60 13Q78 18 72 42Q68 30 58 24Q46 30 28 42Z','M28 40Q30 24 50 22Q70 24 72 40Q64 30 50 30Q36 30 28 40Z'];
+function avatarSVG(av,size){
+  const A={...AV_DEF,...av},sk=AV_SKIN[A.skin]||AV_SKIN[1],hc=AV_HAIRC[A.hairC]||AV_HAIRC[0],H=A.head,hd=A.headC;
+  const wrap=H==='hijab'||H==='kerudung';let o=`<rect width="100" height="100" fill="${A.bg}"/>`;
+  if(!wrap&&H!=='sorban'&&A.hair===3)o+=`<path d="M24 40Q22 14 50 13Q78 14 76 40Q80 62 74 80L26 80Q20 62 24 40Z" fill="${hc}"/>`;
+  o+=`<path d="M14 100Q16 76 50 73Q84 76 86 100Z" fill="${A.top}"/><path d="M41 74L50 85L59 74" fill="none" stroke="rgba(0,0,0,.14)" stroke-width="1.5"/>`;
+  o+=`<rect x="43" y="62" width="14" height="16" rx="6" fill="${sk}"/>`;
+  if(wrap)o+=`<path d="${H==='hijab'?'M50 13C27 13 19 32 20 50C21 64 15 76 12 92L88 92C85 76 79 64 80 50C81 32 73 13 50 13Z':'M50 13C27 13 19 32 20 50C21 62 19 72 23 82Q50 90 77 82C81 72 79 62 80 50C81 32 73 13 50 13Z'}" fill="${hd}"/><path d="M30 78Q50 88 70 78" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="1.5"/>`;
+  o+=`<ellipse cx="50" cy="46" rx="21" ry="23" fill="${sk}"${wrap?` stroke="${hd}" stroke-width="4"`:''}/>`;
+  o+=`<ellipse cx="36" cy="53" rx="4.5" ry="3" fill="#F28B82" opacity=".35"/><ellipse cx="64" cy="53" rx="4.5" ry="3" fill="#F28B82" opacity=".35"/>`;
+  o+=`<ellipse cx="41" cy="45" rx="2.8" ry="3.6" fill="#1F2937"/><ellipse cx="59" cy="45" rx="2.8" ry="3.6" fill="#1F2937"/><circle cx="42" cy="43.8" r="1" fill="#fff"/><circle cx="60" cy="43.8" r="1" fill="#fff"/>`;
+  o+=`<path d="M36 38.5Q41 36 45 38M55 38Q59 36 64 38.5" fill="none" stroke="${hc}" stroke-width="1.6" stroke-linecap="round"/><path d="M45 57Q50 61 55 57" fill="none" stroke="#9B4A3C" stroke-width="1.6" stroke-linecap="round"/>`;
+  if(A.veil===1)o+=`<path d="M28 51Q50 47.5 72 51Q75 66 63 73Q50 79 37 73Q25 66 28 51Z" fill="${hd}"/><path d="M33 53Q50 50 67 53" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>`;
+  if(A.veil===2)o+=`<path d="M31 50Q50 55 69 50L68 63Q50 73 32 63Z" fill="#CFE8F5" stroke="#9CC5DD" stroke-width="1"/><path d="M31 51L27 47M69 51L73 47" stroke="#9CC5DD" stroke-width="1.2"/>`;
+  if(!wrap&&H!=='sorban')o+=`<path d="${AV_HAIR_FRONT[A.hair]||AV_HAIR_FRONT[0]}" fill="${hc}"/>`;
+  if(A.g==='m'&&A.beard===1)o+=`<path d="M30 52Q32 70 50 72Q68 70 70 52Q66 61 50 61Q34 61 30 52Z" fill="${hc}"/>`;
+  if(A.g==='m'&&A.beard===2)o+=`<path d="M29 50Q30 76 50 90Q70 76 71 50Q66 63 50 63Q34 63 29 50Z" fill="${hc}"/>`;
+  if(H==='peci')o+=`<path d="M30 31L32 15Q50 10 68 15L70 31Q50 26 30 31Z" fill="${hd}"/><path d="M30 31Q50 26 70 31" fill="none" stroke="#D4A72C" stroke-width="1.6"/>`;
+  if(H==='sorban')o+=`<path d="M26 37Q24 9 50 9Q76 9 74 37Q50 24 26 37Z" fill="${hd}"/><path d="M32 22Q50 14 68 22M30 29Q50 20 70 29" fill="none" stroke="rgba(0,0,0,.15)" stroke-width="1.6"/><path d="M69 28Q84 44 77 66Q70 52 66 36Z" fill="${hd}" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`;
+  if(A.glasses)o+=`<circle cx="41" cy="45" r="7.5" fill="rgba(255,255,255,.25)" stroke="#1F2937" stroke-width="1.6"/><circle cx="59" cy="45" r="7.5" fill="rgba(255,255,255,.25)" stroke="#1F2937" stroke-width="1.6"/><path d="M48.5 45h3" stroke="#1F2937" stroke-width="1.6"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Avatar">${o}</svg>`;
+}
+
+let avDraft=null;
+const AV_NUM=new Set(['skin','hair','hairC','beard','veil','glasses']);
+const avatarHTML=(av,size)=>`<span class="av-ring" style="width:${size}px;height:${size}px">${avatarSVG(av,size)}</span>`;
+function setHeaderAvatar(acc){const el=$('userAvatar');if(acc.avatar){el.innerHTML=avatarSVG(acc.avatar,36);el.style.background='transparent'}else{el.textContent=acc.nama.charAt(0).toUpperCase();el.style.background=''}}
+function avSetEl(el){
+  const k=el.dataset.k;let v=el.dataset.v;if(AV_NUM.has(k))v=+v;
+  let d={...AV_DEF,...(avDraft||{}),[k]:v};
+  if(k==='g'){d.head=v==='f'?'hijab':'peci';d.headC=v==='f'?'#2F3E5C':'#1F2937';d.beard=0;d.veil=v==='m'&&d.veil===1?0:d.veil;d.hair=Math.min(d.hair,v==='m'?2:3)}
+  if(k==='veil'&&v===1&&d.head==='none')d.head='hijab';
+  avDraft=d;avRender();
+}
+function avPreset(i){avDraft={...AV_DEF,...AV_PRESETS[i].v};avRender()}
+function avClear(){avDraft=null;avRender()}
+function avRender(){
+  const el=$('avEditor');if(!el)return;const c={...AV_DEF,...(avDraft||{})},m=c.g==='m';
+  const chip=(k,v,l)=>`<button type="button" class="av-chip ${c[k]===v?'on':''}" data-k="${k}" data-v="${v}" onclick="avSetEl(this)">${l}</button>`;
+  const sw=(k,list,idx)=>list.map((x,i)=>{const v=idx?i:x;return `<button type="button" class="av-sw ${c[k]===v?'on':''}" style="background:${idx?x:x}" data-k="${k}" data-v="${v}" onclick="avSetEl(this)" aria-label="warna ${i+1}"></button>`}).join('');
+  const heads=m?[['none','Tanpa'],['peci','Peci'],['sorban','Sorban']]:[['hijab','Jilbab'],['kerudung','Kerudung instan'],['none','Rambut']];
+  const hairs=(m?['Pendek','Samping','Jambul']:['Pendek','Samping','Jambul','Panjang']).map((n,i)=>chip('hair',i,n)).join('');
+  el.innerHTML=`<div style="text-align:center;margin-bottom:10px">${avatarHTML(c,104)}<div style="font-size:12px;color:var(--mut);margin-top:6px">${avDraft?'Pratinjau avatar':'Belum dipilih — saat ini memakai huruf inisial'}</div></div>
+  <div class="av-lbl">Pilihan siap pakai</div><div class="av-row">${AV_PRESETS.map((p,i)=>`<button type="button" class="av-pre" title="${esc(p.n)}" onclick="avPreset(${i})">${avatarHTML({...AV_DEF,...p.v},52)}</button>`).join('')}</div>
+  <div class="av-lbl">Atur sendiri</div>
+  <div class="av-row">${chip('g','f','👩 Wanita')}${chip('g','m','👨 Pria')}</div>
+  <div class="av-lbl">Warna kulit</div><div class="av-row">${sw('skin',AV_SKIN,true)}</div>
+  <div class="av-lbl">Penutup kepala</div><div class="av-row">${heads.map(([v,l])=>chip('head',v,l)).join('')}</div>
+  ${c.head!=='none'?`<div class="av-lbl">Warna ${m?'peci / sorban':'hijab'}</div><div class="av-row">${sw('headC',AV_HEADC,false)}</div>`:''}
+  ${(c.head==='none'||c.head==='peci')?`<div class="av-lbl">Model rambut</div><div class="av-row">${hairs}</div>`:''}
+  ${(c.head==='none'||c.head==='peci'||m)?`<div class="av-lbl">Warna rambut${m?' & jenggot':''}</div><div class="av-row">${sw('hairC',AV_HAIRC,true)}</div>`:''}
+  ${m?`<div class="av-lbl">Jenggot</div><div class="av-row">${chip('beard',0,'Tanpa')}${chip('beard',1,'Pendek')}${chip('beard',2,'Panjang')}</div>`:''}
+  <div class="av-lbl">Cadar / masker</div><div class="av-row">${chip('veil',0,'Tanpa')}${m?'':chip('veil',1,'Cadar')}${chip('veil',2,'Masker')}</div>
+  <div class="av-lbl">Kacamata</div><div class="av-row">${chip('glasses',0,'Tanpa')}${chip('glasses',1,'Pakai')}</div>
+  <div class="av-lbl">Warna baju</div><div class="av-row">${sw('top',AV_TOPC,false)}</div>
+  <div class="av-lbl">Warna latar</div><div class="av-row">${sw('bg',AV_BGC,false)}</div>
+  ${avDraft?'<button type="button" class="btn btn-warning btn-sm" onclick="avClear()">↩️ Hapus avatar (pakai huruf inisial)</button>':''}`;
+}
 function akunForm(a,self){
   const edit=!!a;
   return `<div class="form-group"><label class="form-label">Nama ${edit?'':'(ketik untuk memilih dari daftar guru)'}</label><input id="akunNama" class="form-input" list="akunGuruList" autocomplete="off" value="${esc(a?.nama||'')}" ${edit?'':'oninput="akunPilihGuru()"'}><datalist id="akunGuruList">${akunGuruList(a).map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
   <div class="form-row"><div class="form-group"><label class="form-label">Username</label><input id="akunUser" class="form-input" value="${esc(a?.username||'')}" ${edit?'readonly style="background:#f1f3f2"':''}></div><div class="form-group"><label class="form-label">Role</label><select id="akunRole" class="form-select" ${self||a?.username==='admin'?'disabled':''}><option value="fasilitator" ${a?.role==='fasilitator'?'selected':''}>Fasilitator</option><option value="admin" ${a?.role==='admin'?'selected':''}>Admin</option></select></div></div>
   ${self?'<div class="form-group"><label class="form-label">Password Lama (isi jika ingin ganti password)</label><input type="password" id="akunPassLama" class="form-input" autocomplete="current-password"></div>':''}
-  <div class="form-group"><label class="form-label">${edit?'Password Baru (kosongkan jika tidak diganti)':'Password'}</label><input type="password" id="akunPass" class="form-input" autocomplete="new-password"></div>`;
+  <div class="form-group"><label class="form-label">${edit?'Password Baru (kosongkan jika tidak diganti)':'Password'}</label><input type="password" id="akunPass" class="form-input" autocomplete="new-password"></div>
+  <div class="form-group"><label class="form-label">Avatar Profil</label><div id="avEditor"></div></div>`;
 }
 function akunPilihGuru(){const n=$('akunNama').value.trim();if(!$('akunUser').value&&akunGuruList().includes(n))$('akunUser').value=slugUser(n)}
 function showAddAkun(){
+  avDraft=null;
   showModal('Tambah Akun',akunForm(),()=>{
     const username=$('akunUser').value.trim(),password=$('akunPass').value,nama=$('akunNama').value.trim();
     if(!username||!password||!nama){alert('Semua field harus diisi!');return false}
     if(password.length<4){alert('Password minimal 4 karakter.');return false}
     const l=DB.get('accounts');if(l.some(a=>a.username===username)){alert('Username sudah ada!');return false}
-    l.push({username,password,nama,role:$('akunRole').value});DB.set('accounts',l);renderAkun();
+    l.push({username,password,nama,role:$('akunRole').value,...(avDraft?{avatar:avDraft}:{})});DB.set('accounts',l);renderAkun();
   });
+  avRender();
 }
 function showEditAkun(u,self){
   const l=DB.get('accounts'),a=l.find(x=>x.username===u);if(!a)return;
   if(self!==true&&currentUser?.role!=='admin')return;
   self=self===true||u===currentUser?.username;
+  avDraft=a.avatar?{...a.avatar}:null;
   showModal(self?'Akun Saya':'Edit Akun',akunForm(a,self),()=>{
     const nama=$('akunNama').value.trim(),pw=$('akunPass').value;
     if(!nama){alert('Nama harus diisi!');return false}
@@ -1026,12 +1247,13 @@ function showEditAkun(u,self){
     }
     const role=(self||a.username==='admin')?a.role:$('akunRole').value;
     if(a.role==='admin'&&role!=='admin'&&l.filter(x=>x.role==='admin').length<2){alert('Harus ada minimal satu admin.');return false}
-    const rec={...a,nama,role,password:pw||a.password};
+    const rec={...a,nama,role,password:pw||a.password};if(avDraft)rec.avatar=avDraft;else delete rec.avatar;
     DB.set('accounts',l.map(x=>x.username===u?rec:x));
     if(currentUser?.username===u){currentUser=rec;sessionStorage.setItem('ce_user',JSON.stringify(rec));
-      $('userName').textContent=$('greetingName').textContent=rec.nama;$('userAvatar').textContent=rec.nama.charAt(0).toUpperCase()}
+      $('userName').textContent=$('greetingName').textContent=rec.nama;setHeaderAvatar(rec)}
     if($('page-akun').classList.contains('active'))renderAkun();
   });
+  avRender();
 }
 function deleteAkun(u){if(u==='admin'||u===currentUser?.username)return alert('Akun ini tidak bisa dihapus.');if(!confirm('Hapus akun?'))return;DB.set('accounts',DB.get('accounts').filter(a=>a.username!==u));renderAkun()}
 
@@ -1494,7 +1716,7 @@ $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
 // ---------- Sinkronisasi Firebase (dipanggil dari modul Firebase) ----------
 window.fbUser=()=>currentUser?.username||'';
-window.fbKeys=['accounts','kelas','kelompok','siswa','fasilitator','produk','keuangan','rubrik','penilaian','penilaianIndividu','cfgNilai','keuVerif'];
+window.fbKeys=['accounts','kelas','kelompok','siswa','fasilitator','produk','keuangan','rubrik','penilaian','penilaianIndividu','cfgNilai','keuVerif','jadwal'];
 window.fbOnRemote=()=>{
   const a=document.querySelector('.page.active');
   if(!currentUser||!a||$('modal').classList.contains('active'))return;
