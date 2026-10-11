@@ -443,7 +443,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         </div>
         <div class="settings-section">
           <div class="settings-section-title">📊 Informasi Sistem</div>
-          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.12.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
+          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.13.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">⚠️ Zona Berbahaya</div>
@@ -1746,6 +1746,190 @@ window.addEventListener('appinstalled',()=>{deferredInstall=null;$('installBanne
 migrateModel();initData();seedRealData();migrateEvent();
 try{let u=JSON.parse(sessionStorage.getItem('ce_user')||'null');if(!u){const r=localStorage.getItem('ce_remember');if(r){u={username:r};$('loginRemember').checked=true;$('loginUsername').value=r}}const acc=u&&DB.get('accounts').find(a=>a.username===u.username);if(acc){currentUser=acc;sessionStorage.setItem('ce_user',JSON.stringify(acc));showApp()}}catch(e){}
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+<script>
+(function(){
+  if(window.__fiturTambahan)return;window.__fiturTambahan=1;
+  if(window.fbKeys&&!window.fbKeys.includes('cfgInfak'))window.fbKeys.push('cfgInfak');
+  const after=(id,fn)=>{const o=window[id];window[id]=function(){const r=o.apply(this,arguments);try{fn()}catch(e){console.error(id,e)}return r}};
+
+  /* 1. Bagikan jadwal ke WhatsApp */
+  function waText(){
+    const l=jdUpcoming();if(!l.length)return null;
+    const tgl=j=>{const [y,m,d]=j.tanggal.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'short'})};
+    const b=l.map(j=>{let s=`• *${j.kegiatan} ke-${j.sesi||1}*: ${tgl(j)}`;
+      if(j.tanggalAkhir&&j.tanggalAkhir!==j.tanggal)s+=` s.d. ${fmtTglPendek(j.tanggalAkhir)}`;
+      s+=`, ${jdKelasLbl(j)}`;if(j.lokasi)s+=`\n   📍 ${j.lokasi}`;if(j.catatan)s+=`\n   📝 ${j.catatan}`;return s}).join('\n');
+    return `📅 *Jadwal Entrepreneur Day & Business Day*\nSMP TahfizhPreneur Cahaya Qur'an\n\n${b}\n\nMohon dipersiapkan. Barakallahu fiikum 🙏`;
+  }
+  window.shareJadwalWA=function(){const t=waText();if(!t)return alert('Belum ada jadwal yang akan datang.');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
+  after('renderJadwal',()=>{$('jdAdminBtns').insertAdjacentHTML('afterbegin','<button class="btn btn-success btn-sm" onclick="shareJadwalWA()">📲 Bagikan ke WhatsApp</button> ')});
+
+  /* 2. Belum Dinilai per fasilitator (dashboard) */
+  function slot(id,afterId){let e=$(id);if(!e){e=document.createElement('div');e.id=id;$(afterId).after(e)}return e}
+  function belum(){
+    const el=slot('belumDinilai','jadwalReminder');
+    const sis=DB.get('siswa'),kel=DB.get('kelompok'),kls=DB.get('kelas'),fas=DB.get('fasilitator');
+    const sk=new Set(DB.get('penilaian').map(p=>p.kelompokId)),ss=new Set(DB.get('penilaianIndividu').map(p=>p.siswaId));
+    const rows=kls.map(k=>({k,bs:sis.filter(s=>s.kelasId===k.id&&!ss.has(s.id)),bk:kel.filter(g=>g.kelasId===k.id&&!sk.has(g.id)),
+      fs:fas.filter(f=>(f.areaTugas||[]).includes(k.id)).map(f=>f.nama)})).filter(r=>r.bs.length||r.bk.length);
+    el.innerHTML='<div class="card"><div class="card-title" style="margin-bottom:12px">⏳ Belum Dinilai</div>'+(rows.length?
+      '<div class="table-wrapper"><table><thead><tr><th>Kelas</th><th>Fasilitator (Area Tugas)</th><th>Siswa</th><th>Kelompok</th></tr></thead><tbody>'+
+      rows.map(r=>`<tr><td><strong>${esc(r.k.nama)}</strong></td><td>${r.fs.length?esc(r.fs.join(', ')):'<span style="color:var(--mut)">Area Tugas belum diatur</span>'}</td><td><span class="badge badge-warning">${r.bs.length}</span></td><td>${r.bk.length?esc(r.bk.map(g=>g.nama).join(', ')):'-'}</td></tr>`).join('')+'</tbody></table></div>'
+      :'<div style="color:var(--ok);font-weight:600">✅ Semua siswa dan kelompok sudah dinilai.</div>')+'</div>';
+  }
+
+  /* 3. Badge kelompok */
+  function badgesAll(){
+    const kel=DB.get('kelompok'),keu=DB.get('keuangan'),pen=latestPen(),out=[];
+    const om=kel.map(g=>({g,v:keu.filter(x=>x.kelompokId===g.id).reduce((a,x)=>a+(+x.penjualan||0),0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+    if(om.length)out.push({b:'💰 Omzet Tertinggi',id:om[0].g.id,nama:om[0].g.nama,d:rp(om[0].v)});
+    [[0,'🤝 Paling Kompak'],[1,'🧼 Paling Rapi & Bersih'],[2,'💡 Paling Kreatif']].forEach(([i,b])=>{
+      const s=pen.filter(p=>p.scores&&p.scores[i]!=null).sort((a,c)=>c.scores[i]-a.scores[i]);
+      if(s.length>1&&s[0].scores[i]>s[s.length-1].scores[i])out.push({b,id:s[0].kelompokId,nama:s[0].kelompok,d:s[0].scores[i].toFixed(1)})});
+    return out;
+  }
+  function badge(){
+    const el=slot('badgeKelompok','belumDinilai'),l=badgesAll();
+    el.innerHTML='<div class="card"><div class="card-title" style="margin-bottom:12px">🏅 Badge Kelompok</div>'+(l.length?
+      '<div style="display:flex;flex-wrap:wrap;gap:10px">'+l.map(x=>`<div class="jd-card" style="margin:0;flex:1;min-width:210px"><div class="jd-info"><div class="jd-title">${x.b}</div><div class="jd-sub">${esc(x.nama)} · ${esc(x.d)}</div></div></div>`).join('')+'</div>'
+      :'<div style="color:var(--mut);font-size:14px">Badge muncul setelah ada data penjualan dan penilaian kelompok yang nilainya berbeda.</div>')+'</div>';
+  }
+  after('renderDashboard',()=>{belum();badge()});
+
+  /* 4. Infak dari keuntungan (menu Keuangan) */
+  const persen=()=>{const v=parseFloat((DB.get('cfgInfak',{})||{}).persen);return isNaN(v)?2.5:v};
+  window.setInfak=function(v){DB.set('cfgInfak',{persen:Math.max(0,Math.min(100,parseFloat(String(v).replace(',','.'))||0))});renderKeuangan()};
+  after('renderKeuangan',()=>{
+    const kel=DB.get('kelompok'),fk=$('keuKelasFilter')?.value||'',fg=$('keuKelompokFilter')?.value||'';
+    const k=DB.get('keuangan').filter(x=>(!fg||String(x.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===x.kelompokId)?.kelasId===fk));
+    const unt=Math.max(0,k.reduce((a,x)=>a+(+x.keuntungan||0),0)),p=persen();
+    $('keuanganStats').insertAdjacentHTML('beforeend',`<div class="stat-card gold"><div class="stat-icon">🤲</div><div class="stat-value">${rp(Math.round(unt*p/100))}</div><div class="stat-label">Infak/Sedekah <input type="number" min="0" max="100" step="0.5" value="${p}" style="width:60px;padding:2px 6px;border:1px solid var(--bd);border-radius:6px" onchange="setInfak(this.value)">% dari keuntungan</div></div>`);
+  });
+
+  /* 5. Rapor cetak per siswa / per kelas (menu Nilai Akhir) */
+  window.cetakRapor=function(){
+    const c=cfg(),d=hitungNA().filter(r=>r.fin!=null);
+    if(!d.length)return alert('Belum ada siswa yang punya nilai pada filter kelas ini.');
+    const bd=badgesAll(),ind=DB.get('penilaianIndividu'),f=o=>o?o.v.toFixed(1):'-';
+    const pg=d.map(r=>{
+      const cat=ind.filter(p=>p.siswaId===r.s.id&&p.catatan).map(p=>`${p.kegiatan} ke-${p.sesi} (${p.fasNama}): ${p.catatan}`);
+      const bg=r.s.kelompokId?bd.filter(x=>x.id===r.s.kelompokId).map(x=>x.b).join(', '):'';
+      return `<section><h2>RAPOR ENTREPRENEUR DAY & BUSINESS DAY</h2><div class="sub">SMP TahfizhPreneur Cahaya Qur'an</div>
+      <table class="i"><tr><td>Nama</td><td>${esc(r.s.nama)}</td></tr><tr><td>NIS</td><td>${esc(r.s.nis)}</td></tr><tr><td>Kelas</td><td>${esc(r.kelas)}</td></tr><tr><td>Kelompok</td><td>${esc(r.s.kelompokId?kelName(r.s.kelompokId):'-')}</td></tr></table>
+      <table class="n"><tr><th></th><th>Entrepreneur Day</th><th>Business Day</th></tr><tr><td>Nilai Individu</td><td>${f(r.i.ED)}</td><td>${f(r.i.BD)}</td></tr><tr><td>Nilai Kelompok</td><td>${f(r.g.ED)}</td><td>${f(r.g.BD)}</td></tr></table>
+      <div class="fin">Nilai Akhir: <b>${r.fin.toFixed(1)}</b> &nbsp; Grade: <b>${getGrade(r.fin)}</b> &nbsp; ${r.fin>=c.Kkm?'Tuntas':'Belum tuntas'} (KKM ${c.Kkm})</div>
+      ${bg?`<p><b>Badge kelompok:</b> ${esc(bg)}</p>`:''}
+      <p><b>Catatan fasilitator:</b></p>${cat.length?'<ul>'+cat.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p>-</p>'}
+      <div class="ttd">${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}<br><br><br><br>(................................)<br>Wali Kelas / Koordinator</div></section>`}).join('');
+    const w=window.open('','_blank');if(!w)return alert('Izinkan pop-up untuk mencetak rapor.');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rapor Entrepreneur Day</title><style>
+      body{font-family:system-ui,Arial,sans-serif;color:#1F2937}section{page-break-after:always;padding:28px 36px;max-width:720px;margin:auto}
+      h2{margin:0;text-align:center;color:#064E3B}.sub{text-align:center;color:#6B7280;margin-bottom:18px;border-bottom:3px solid #087F5B;padding-bottom:10px}
+      table{border-collapse:collapse;width:100%;margin-bottom:14px}.i td{padding:3px 6px}.i td:first-child{width:110px;color:#6B7280}
+      .n th,.n td{border:1px solid #D1D5DB;padding:8px;text-align:center}.n th{background:#E3F4EC}.n td:first-child{text-align:left}
+      .fin{background:#F0F7F4;border-radius:8px;padding:12px;text-align:center;font-size:16px;margin-bottom:14px}.ttd{margin-top:36px;text-align:right}
+      @media print{@page{size:A4;margin:12mm}}</style></head><body>${pg}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);
+    w.document.close();
+  };
+  after('initNilaiAkhir',()=>{const a=document.querySelector('#page-nilai-akhir .form-actions');
+    if(a&&!$('btnRapor'))a.insertAdjacentHTML('beforeend',' <button id="btnRapor" class="btn btn-warning btn-sm" onclick="cetakRapor()">🧾 Cetak Rapor (sesuai filter kelas)</button>')});
+})();
+
+</script>
+<script>
+(function(){
+  if(window.__fitur2)return;window.__fitur2=1;
+  ['absensi','checklist','refleksi'].forEach(k=>{if(window.fbKeys&&!window.fbKeys.includes(k))window.fbKeys.push(k)});
+  let tab='abs';
+  const CHK=[['produk','Produk disetujui'],['modal','Modal tercatat'],['alat','Perlengkapan siap'],['stan','Stan/lapak siap']];
+  const ST=[['hadir','Hadir'],['izin','Izin'],['sakit','Sakit'],['alpa','Alpa']];
+  const sel=()=>({keg:$('hrKeg').value,sesi:+$('hrSesi').value,kelas:$('hrKelas').value});
+  const kgs=kelas=>DB.get('kelompok').filter(g=>g.kelasId===kelas);
+
+  /* --- halaman & menu --- */
+  $('page-jadwal').insertAdjacentHTML('afterend',`<div class="page" id="page-hari"><div class="page-header"><h1 class="page-title">✅ Hari Pelaksanaan</h1><p class="page-subtitle">Absensi, checklist persiapan, refleksi siswa, dan QR kelompok</p></div>
+  <div class="card"><div class="form-row"><div class="form-group"><label class="form-label">Kegiatan</label><select id="hrKeg" class="form-select" onchange="hariRender()"><option value="ED">Entrepreneur Day</option><option value="BD">Business Day</option></select></div>
+  <div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="hrSesi" class="form-select" onchange="hariRender()"></select></div>
+  <div class="form-group"><label class="form-label">Kelas</label><select id="hrKelas" class="form-select" onchange="hariRender()"></select></div></div>
+  <div class="tabs">${[['abs','📋 Absensi'],['chk','☑️ Checklist'],['ref','💭 Refleksi'],['qr','🔳 QR Kelompok']].map(([k,l])=>`<div class="tab ${k==='abs'?'active':''}" data-hr="${k}" onclick="hariTab('${k}')">${l}</div>`).join('')}</div>
+  <div id="hrBody"></div></div></div>`);
+  document.querySelector('.menu-item[data-page="jadwal"]').insertAdjacentHTML('afterend','<div class="menu-item" data-page="hari">✅ Hari Pelaksanaan</div>');
+  document.querySelector('.menu-item[data-page="hari"]').addEventListener('click',()=>showPage('hari'));
+
+  const _sp=window.showPage;
+  window.showPage=function(n){
+    if(n!=='hari')return _sp(n);
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('page-hari').classList.add('active');
+    document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(m=>m.classList.toggle('active',m.dataset.page===n));
+    $('breadcrumbText').textContent='Hari Pelaksanaan';$('sidebar').classList.remove('active');window.scrollTo(0,0);
+    keep('hrKelas',kelasOpts());keep('hrSesi',sesiOpts());hariRender();
+  };
+  window.hariTab=k=>{tab=k;document.querySelectorAll('[data-hr]').forEach(t=>t.classList.toggle('active',t.dataset.hr===k));hariRender()};
+  window.hariRender=function(){({abs:absR,chk:chkR,ref:refR,qr:qrR})[tab]()};
+
+  /* --- 1. Absensi --- */
+  function absR(){
+    const {keg,sesi,kelas}=sel(),ab=DB.get('absensi'),sis=DB.get('siswa').filter(s=>s.kelasId===kelas);
+    const st=s=>ab.find(a=>a.siswaId===s.id&&a.kegiatan===keg&&a.sesi===sesi)?.status||'';
+    const c={hadir:0,izin:0,sakit:0,alpa:0,belum:0};sis.forEach(s=>c[st(s)||'belum']++);
+    $('hrBody').innerHTML=`<div style="margin-bottom:12px;font-size:14px">Hadir <b>${c.hadir}</b> · Izin <b>${c.izin}</b> · Sakit <b>${c.sakit}</b> · Alpa <b>${c.alpa}</b> · Belum diisi <b>${c.belum}</b> <button class="btn btn-info btn-sm" onclick="absSemua()">Semua belum diisi → Hadir</button></div>
+    <div class="table-wrapper"><table><thead><tr><th>No</th><th>Nama</th><th>Kehadiran</th></tr></thead><tbody>${sis.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td><select class="form-select" style="width:auto" onchange="absSet(${s.id},this.value)"><option value="">-</option>${ST.map(([v,l])=>`<option value="${v}" ${st(s)===v?'selected':''}>${l}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--mut)">Tidak ada siswa</td></tr>'}</tbody></table></div>`;
+  }
+  window.absSet=(id,v)=>{const {keg,sesi}=sel();let l=DB.get('absensi').filter(a=>!(a.siswaId===id&&a.kegiatan===keg&&a.sesi===sesi));if(v)l.push({siswaId:id,kegiatan:keg,sesi,status:v});DB.set('absensi',l);absR()};
+  window.absSemua=()=>{const {keg,sesi,kelas}=sel(),l=DB.get('absensi');DB.get('siswa').filter(s=>s.kelasId===kelas).forEach(s=>{if(!l.some(a=>a.siswaId===s.id&&a.kegiatan===keg&&a.sesi===sesi))l.push({siswaId:s.id,kegiatan:keg,sesi,status:'hadir'})});DB.set('absensi',l);absR()};
+
+  /* --- 2. Checklist persiapan --- */
+  const ck=(g,keg,sesi)=>(DB.get('checklist',{})||{})[g.id+'|'+keg+'|'+sesi]||{};
+  function chkR(){
+    const {keg,sesi,kelas}=sel(),gs=kgs(kelas);
+    $('hrBody').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Kelompok</th>${CHK.map(x=>`<th>${x[1]}</th>`).join('')}<th>Status</th></tr></thead><tbody>${gs.map(g=>{const o=ck(g,keg,sesi),n=CHK.filter(x=>o[x[0]]).length;
+      return `<tr><td><strong>${esc(g.nama)}</strong></td>${CHK.map(([k])=>`<td style="text-align:center"><input type="checkbox" ${o[k]?'checked':''} onchange="chkSet(${g.id},'${k}',this.checked)"></td>`).join('')}<td><span class="badge badge-${n===4?'success':n?'warning':'danger'}">${n===4?'Siap':n+'/4'}</span></td></tr>`}).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--mut)">Belum ada kelompok di kelas ini</td></tr>'}</tbody></table></div>`;
+  }
+  window.chkSet=(id,k,v)=>{const {keg,sesi}=sel(),m=DB.get('checklist',{})||{},key=id+'|'+keg+'|'+sesi;m[key]={...(m[key]||{}),[k]:v};DB.set('checklist',m);chkR()};
+
+  /* --- 3. Refleksi + grafik perkembangan --- */
+  function refR(){
+    const {keg,sesi,kelas}=sel(),gs=kgs(kelas),gids=new Set(gs.map(g=>g.id)),rf=DB.get('refleksi').filter(r=>gids.has(r.kelompokId));
+    $('hrBody').innerHTML=`<div class="form-group"><label class="form-label">Kelompok</label><select id="rfKel" class="form-select">${gs.map(g=>`<option value="${g.id}">${esc(g.nama)}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Apa yang berhasil?</label><textarea id="rfOk" class="form-textarea"></textarea></div>
+    <div class="form-group"><label class="form-label">Apa yang perlu diperbaiki?</label><textarea id="rfFix" class="form-textarea"></textarea></div>
+    <button class="btn btn-success btn-sm" onclick="rfSimpan()">💾 Simpan Refleksi (${KEG[keg]} ke-${sesi})</button>
+    <div class="card-title" style="margin:22px 0 10px">📈 Perkembangan Nilai Kelompok per Pelaksanaan</div><div class="chart-container"><canvas id="hrChart"></canvas></div>
+    <div class="card-title" style="margin:22px 0 10px">💭 Daftar Refleksi</div>${rf.slice().reverse().map(r=>`<div class="jd-card"><div class="jd-info"><div class="jd-title">${esc(kelName(r.kelompokId))} · ${r.kegiatan} ke-${r.sesi}</div><div class="jd-sub">✅ ${esc(r.berhasil||'-')}</div><div class="jd-sub">🔧 ${esc(r.perbaiki||'-')}</div></div><button class="btn btn-danger btn-sm" onclick="rfHapus(${r.id})">🗑️</button></div>`).join('')||'<div style="color:var(--mut)">Belum ada refleksi.</div>'}`;
+    const pen=DB.get('penilaian').filter(p=>gids.has(p.kelompokId)),key=p=>p.kegiatan+p.sesi,ord=k=>(k[0]==='BD'?100:0)+ +k.slice(2);
+    const labs=[...new Set(pen.map(key))].sort((a,b)=>ord(a)-ord(b));
+    mkChart('hrProg','hrChart',{type:'line',data:{labels:labs,datasets:gs.map(g=>({label:g.nama,spanGaps:true,tension:.25,data:labs.map(l=>{const p=pen.find(x=>x.kelompokId===g.id&&key(x)===l);return p?parseFloat(p.total):null})}))},options:{scales:{y:{beginAtZero:true,max:100}}}});
+  }
+  window.rfSimpan=()=>{const {keg,sesi}=sel(),kid=+$('rfKel').value;if(!kid)return alert('Pilih kelompok.');const b=$('rfOk').value.trim(),p=$('rfFix').value.trim();if(!b&&!p)return alert('Isi minimal salah satu kolom refleksi.');
+    const l=DB.get('refleksi').filter(r=>!(r.kelompokId===kid&&r.kegiatan===keg&&r.sesi===sesi));l.push({id:uid(),kelompokId:kid,kegiatan:keg,sesi,berhasil:b,perbaiki:p,waktu:new Date().toISOString()});DB.set('refleksi',l);refR()};
+  window.rfHapus=id=>{if(confirm('Hapus refleksi ini?')){DB.set('refleksi',DB.get('refleksi').filter(r=>r.id!==id));refR()}};
+
+  /* --- 4. QR per kelompok → langsung ke form penilaian kelompok --- */
+  const loadQR=()=>window.qrcode?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+  const base=()=>location.origin+location.pathname;
+  const qrImg=g=>{const q=qrcode(0,'M');q.addData(base()+'#nilai='+g.id);q.make();return q.createDataURL(6,2)};
+  function qrR(){
+    const gs=kgs(sel().kelas),web=/^https?:$/.test(location.protocol);
+    $('hrBody').innerHTML=(web?'':'<div style="background:#FFF8E1;padding:12px;border-radius:10px;margin-bottom:12px;font-size:14px">⚠️ QR hanya berguna bila aplikasi dibuka lewat alamat web (mis. GitHub Pages), bukan dari file di komputer.</div>')+
+      `<p style="font-size:14px;color:var(--mut);margin-bottom:12px">Fasilitator memindai QR di stan, lalu (setelah login) langsung masuk ke form penilaian kelompok tersebut.</p><button class="btn btn-primary btn-sm" onclick="qrCetak()">🖨️ Cetak QR kelas ini</button>
+      <div style="margin-top:12px">${gs.map(g=>`<div class="jd-card"><div class="jd-info"><div class="jd-title">${esc(g.nama)}</div><div class="jd-sub">${esc(base())}#nilai=${g.id}</div></div></div>`).join('')||'<div style="color:var(--mut)">Belum ada kelompok.</div>'}</div>`;
+  }
+  window.qrCetak=async()=>{
+    const gs=kgs(sel().kelas);if(!gs.length)return alert('Belum ada kelompok.');
+    try{await loadQR()}catch(e){return alert('Library QR gagal dimuat. Periksa koneksi internet.')}
+    const w=window.open('','_blank');if(!w)return alert('Izinkan pop-up untuk mencetak.');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR Kelompok</title><style>body{font-family:system-ui,Arial,sans-serif}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:16px}.c{border:2px solid #087F5B;border-radius:12px;padding:14px;text-align:center;page-break-inside:avoid}.c img{width:200px;height:200px}.c b{display:block;font-size:18px;margin-top:6px}.c small{color:#6B7280}</style></head><body><div class="g">${gs.map(g=>`<div class="c"><img src="${qrImg(g)}"><b>${esc(g.nama)}</b><small>Pindai untuk menilai · ${esc(DB.get('kelas').find(k=>k.id===g.kelasId)?.nama||'')}</small></div>`).join('')}</div><script>onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);w.document.close();
+  };
+  function bukaDariQR(){
+    const m=/#nilai=(\d+)/.exec(location.hash);if(!m||typeof currentUser==='undefined'||!currentUser)return;
+    const g=DB.get('kelompok').find(x=>x.id==m[1]);if(!g)return;
+    showPage('penilaian');$('penilaianKelas').value=g.kelasId;loadKelompok();$('penilaianKelompok').value=g.id;renderKelPreview();history.replaceState(null,'',location.pathname+location.search);
+  }
+  const _sa=window.showApp;window.showApp=function(){const r=_sa.apply(this,arguments);try{bukaDariQR()}catch(e){console.error(e)}return r};
+  try{bukaDariQR()}catch(e){}
+})();
+
 </script>
 <div id="installBanner" role="dialog" aria-label="Install aplikasi"><img src="icon-192.png" alt=""><div class="ib-text"><strong>Install Cahaya Entrepreneur</strong>Pasang di perangkat ini agar bisa dibuka seperti aplikasi, langsung dari layar utama.</div><div class="ib-act"><button class="ib-yes" onclick="installApp()">Install</button><button class="ib-no" onclick="dismissInstall()">Nanti</button></div></div>
 <div id="syncStatus" class="sync-connecting">⏳ Menyinkronkan…</div>
