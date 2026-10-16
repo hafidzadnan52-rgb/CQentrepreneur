@@ -227,9 +227,11 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header"><div class="sidebar-logo"><div class="sidebar-logo-icon logo-cq" role="img" aria-label="Logo sekolah"></div><div><div class="sidebar-title">CAHAYA<br>ENTREPRENEUR</div><div class="sidebar-subtitle">SMP TahfizhPreneur Cahaya Qur'an</div></div></div></div>
     <nav class="sidebar-menu">
+      <div class="menu-section"><div class="menu-section-title">Kelompok Saya</div><div class="menu-item k-only" data-page="ketua">🧑‍💼 Dashboard Kelompok</div></div>
       <div class="menu-section"><div class="menu-section-title">Main</div><div class="menu-item active" data-page="dashboard">📊 Dashboard</div></div>
       <div class="menu-section"><div class="menu-section-title">Entrepreneur</div>
         <div class="menu-item" data-page="jadwal">📅 Jadwal ED &amp; BD</div>
+        <div class="menu-item" data-page="verifikasi">✅ Verifikasi Data Kelompok</div>
         <div class="menu-item" data-page="penilaian">📝 Penilaian Kelompok</div>
         <div class="menu-item" data-page="penilaian-individu">👤 Penilaian Individu</div>
         <div class="menu-item" data-page="kelompok">👥 Kelompok</div>
@@ -257,6 +259,15 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         <div class="profile-menu" id="profileMenu"><button type="button" onclick="closeProfileMenu();showEditAkun(currentUser.username,true)">✏️ Edit Akun</button><button type="button" class="pm-out" onclick="closeProfileMenu();if(confirm('Keluar dari aplikasi?'))doLogout()">🚪 Keluar</button></div></div>
     </header>
 
+    <div class="page" id="page-ketua">
+      <div class="card"><div class="card-header"><div class="card-title">Dashboard Kelompok</div><div class="inline-btns"><button class="btn btn-primary btn-sm" onclick="ktForm()">➕ Tambah Produk</button></div></div><div id="ktInfo" style="font-size:13px;color:var(--mut)"></div></div>
+      <div class="stats-grid" id="ktStats"></div>
+      <div class="card"><div class="card-header"><div class="card-title">Produk Kelompok</div></div><div class="table-wrapper"><table><thead><tr><th>Produk</th><th>Kegiatan</th><th>Harga</th><th>Modal</th><th>Dibuat/Terjual</th><th>Laba</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="ktBody"></tbody></table></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Ringkasan Keuangan per Sesi (data yang sudah disetujui)</div></div><div class="table-wrapper"><table><thead><tr><th>Kegiatan</th><th>Modal</th><th>Penjualan</th><th>Laba</th><th>Margin</th></tr></thead><tbody id="ktKeu"></tbody></table></div></div>
+    </div>
+    <div class="page" id="page-verifikasi">
+      <div class="card"><div class="card-header"><div class="card-title">Verifikasi Data Kelompok <span id="vfCount" class="badge badge-warning"></span></div></div><div style="font-size:13px;color:var(--mut);margin-bottom:10px">Data yang diinput ketua kelompok. Setelah disetujui, data masuk ke Produk, Keuangan, Rekap, dan Nilai Akhir.</div><div class="table-wrapper"><table><thead><tr><th>Kelompok</th><th>Produk</th><th>Kegiatan</th><th>Harga</th><th>Modal</th><th>Dibuat/Terjual</th><th>Laba</th><th>Aksi</th></tr></thead><tbody id="vfBody"></tbody></table></div></div>
+    </div>
     <div class="page active" id="page-dashboard">
       <div class="dashboard-greeting"><div class="greeting-title">Assalamu'alaikum, <span id="greetingName">Admin</span> 👋</div><div>Pantau perkembangan Entrepreneur Day dengan lebih mudah.</div><div class="greeting-date">📅 <span id="currentDate"></span></div><div class="greeting-quote">“Sebaik-baik manusia adalah yang paling bermanfaat bagi manusia lainnya.”<small>(HR. Ahmad)</small></div></div>
       <div id="jadwalReminder"></div>
@@ -349,7 +360,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 
     <div class="page" id="page-akun">
       <div class="page-header"><h1 class="page-title">🔐 Manajemen Akun</h1><p class="page-subtitle">Kelola akun pengguna sistem</p></div>
-      <div class="card"><div class="card-header"><div class="card-title">Daftar Akun</div><div class="inline-btns"><button class="btn btn-success btn-sm" onclick="downloadAkunExcel()">📥 Download Akun (Excel)</button><button class="btn btn-primary btn-sm" onclick="showAddAkun()">➕ Tambah Akun</button></div></div><div class="table-wrapper"><table id="akunTable"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Daftar Akun</div><div class="inline-btns"><button class="btn btn-success btn-sm" onclick="downloadAkunExcel()">📥 Download Akun (Excel)</button><button class="btn btn-info btn-sm" onclick="akunKetuaOtomatis()">🧑‍💼 Buat Akun Ketua Otomatis</button><button class="btn btn-primary btn-sm" onclick="showAddAkun()">➕ Tambah Akun</button></div></div><div class="table-wrapper"><table id="akunTable"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
     </div>
 
     <div class="page" id="page-analitik">
@@ -443,7 +454,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         </div>
         <div class="settings-section">
           <div class="settings-section-title">📊 Informasi Sistem</div>
-          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.13.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
+          <div style="font-size:14px;line-height:2"><div><strong>Versi:</strong> 3.14.0</div><div><strong>Database:</strong> Firebase Firestore (cadangan offline di browser)</div><div><strong>Total Penilaian Kelompok:</strong> <span id="infoPenilaian">0</span></div><div><strong>Total Siswa:</strong> <span id="infoSiswa">0</span></div><div><strong>Total Foto:</strong> <span id="infoFoto">0</span></div></div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">⚠️ Zona Berbahaya</div>
@@ -476,6 +487,8 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
   </div>
 
   <nav class="mobile-nav">
+    <div class="mobile-nav-item k-only" data-page="ketua"><span class="mobile-nav-icon">🧑‍💼</span>Kelompok</div>
+    <div class="mobile-nav-item k-only" data-page="jadwal"><span class="mobile-nav-icon">📅</span>Jadwal</div>
     <div class="mobile-nav-item active" data-page="dashboard"><span class="mobile-nav-icon">📊</span>Home</div>
     <div class="mobile-nav-item" data-page="penilaian"><span class="mobile-nav-icon">📝</span>Nilai</div>
     <div class="mobile-nav-item" data-page="kelompok"><span class="mobile-nav-icon">👥</span>Kelompok</div>
@@ -577,9 +590,10 @@ function doLogout(){
 function showApp(){
   $('loginPage').style.display='none';$('app').style.display='block';
   $('userName').textContent=$('greetingName').textContent=currentUser.nama;
-  $('userRole').textContent=currentUser.role==='admin'?'Administrator':'Fasilitator';
+  $('userRole').textContent=currentUser.role==='admin'?'Administrator':currentUser.role==='ketua'?'Ketua '+kelName(currentUser.kelompokId):'Fasilitator';
   setHeaderAvatar(currentUser);
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=currentUser.role==='admin'?'flex':'none');
+  applyRoleUI();
   $('currentDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   $('indTanggal').value=today();
   showPage('dashboard');
@@ -598,16 +612,17 @@ function clearAllData(){
 // ---------- Navigasi ----------
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 function toggleSidebar(){$('sidebar').classList.toggle('active')}
-const ADMIN_PAGES=['akun','pengaturan'];
+const ADMIN_PAGES=['akun','pengaturan'],KETUA_PAGES=['ketua','jadwal'];
 function showPage(name){
   if(ADMIN_PAGES.includes(name)&&currentUser?.role!=='admin')name='dashboard';
+  if(currentUser?.role==='ketua'&&!KETUA_PAGES.includes(name))name='ketua';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   $('page-'+name).classList.add('active');
   document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(m=>m.classList.toggle('active',m.dataset.page===name));
   const mi=document.querySelector(`.menu-item[data-page="${name}"]`);
   $('breadcrumbText').textContent=mi?mi.textContent.trim():name;
   $('sidebar').classList.remove('active');window.scrollTo(0,0);
-  const init={dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan,jadwal:initJadwal}[name];
+  const init={ketua:renderKetua,verifikasi:renderVerifikasi,dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan,jadwal:initJadwal}[name];
   if(init)init();
 }
 document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(i=>i.addEventListener('click',()=>showPage(i.dataset.page)));
@@ -1025,6 +1040,81 @@ function showAddProduk(){if(!DB.get('kelompok').length)return alert('Buat kelomp
 function showEditProduk(id){const p=DB.get('produk').find(x=>x.id===id);if(!p)return;showModal('Edit Produk',prodForm(p),()=>prodSave(p));prodInit(p)}
 function deleteProduk(id){if(!confirm('Hapus produk?'))return;DB.set('produk',DB.get('produk').filter(p=>p.id!==id));renderProduk()}
 
+
+// ---------- Akun Ketua Kelompok ----------
+const akunKelOpts=sel=>DB.get('kelompok').map(k=>`<option value="${k.id}" ${k.id==sel?'selected':''}>${esc(k.nama)} (${esc(DB.get('kelas').find(c=>c.id===k.kelasId)?.nama||k.kelasId)})</option>`).join('');
+const genPw=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('');
+function akunKetuaOtomatis(){
+  if(currentUser?.role!=='admin')return;
+  const acc=DB.get('accounts'),has=new Set(acc.filter(a=>a.role==='ketua').map(a=>a.kelompokId));
+  const todo=DB.get('kelompok').filter(k=>!has.has(k.id));
+  if(!todo.length)return alert('Semua kelompok sudah punya akun ketua.');
+  if(!confirm(`Buat ${todo.length} akun ketua kelompok (password acak)? Unduh daftarnya lewat tombol "Download Akun (Excel)".`))return;
+  const sis=DB.get('siswa'),used=new Set(acc.map(a=>a.username));
+  todo.forEach(k=>{
+    let u='ketua.'+slugUser(k.kelasId+k.nama),b=u,i=2;while(used.has(u))u=b+(i++);used.add(u);
+    acc.push({username:u,password:genPw(),nama:sis.find(s=>s.kelompokId===k.id&&s.peran==='Ketua')?.nama||'Ketua '+k.nama,role:'ketua',kelompokId:k.id});
+  });
+  DB.set('accounts',acc);renderAkun();
+}
+// ---------- Tampilan menurut role ----------
+function applyRoleUI(){
+  const k=currentUser.role==='ketua';
+  document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(el=>{
+    const p=el.dataset.page,adm=el.classList.contains('admin-only');
+    if(k)el.style.display=KETUA_PAGES.includes(p)?'':'none';
+    else if(el.classList.contains('k-only'))el.style.display='none';
+    else if(!adm)el.style.display='';
+  });
+  document.querySelectorAll('.menu-section').forEach(s=>{s.style.display=[...s.querySelectorAll('.menu-item')].some(i=>i.style.display!=='none')?'':'none'});
+  const ai=document.querySelector('.ai-assistant');if(ai)ai.style.display=k?'none':'';
+}
+// ---------- Input produk oleh ketua (disimpan terpisah per kelompok: pk_<kelompokId>) ----------
+const pkGet=id=>DB.raw('pk_'+id,[]),pkSet=(id,l)=>DB.set('pk_'+id,l);
+const stBadge=s=>`<span class="badge badge-${s==='approved'?'success':s==='rejected'?'danger':'warning'}">${s==='approved'?'Disetujui':s==='rejected'?'Ditolak':'Menunggu'}</span>`;
+const labaP=p=>(+p.hargaJual||0)*(+p.terjual||0)-modalTot(p);
+function renderKetua(){
+  const kid=currentUser.kelompokId,k=DB.get('kelompok').find(x=>x.id==kid);
+  if(!k){$('ktInfo').textContent='Akun ini belum terhubung ke kelompok. Hubungi fasilitator.';['ktStats','ktBody','ktKeu'].forEach(i=>$(i).innerHTML='');return}
+  $('ktInfo').textContent=`${k.nama} • ${DB.get('kelas').find(c=>c.id===k.kelasId)?.nama||k.kelasId}. Data baru berstatus "Menunggu" sampai disetujui fasilitator.`;
+  const ap=DB.raw('produk').filter(p=>p.kelompokId==kid),pend=pkGet(kid);
+  const mod=ap.reduce((s,p)=>s+modalTot(p),0),jual=ap.reduce((s,p)=>s+(+p.hargaJual||0)*(+p.terjual||0),0);
+  $('ktStats').innerHTML=`<div class="stat-card"><div class="stat-icon">💵</div><div class="stat-value">${rp(mod)}</div><div class="stat-label">Total Modal</div></div><div class="stat-card success"><div class="stat-icon">💰</div><div class="stat-value">${rp(jual)}</div><div class="stat-label">Total Penjualan</div></div><div class="stat-card gold"><div class="stat-icon">📈</div><div class="stat-value">${rp(jual-mod)}</div><div class="stat-label">Keuntungan${jual>0?' ('+((jual-mod)/jual*100).toFixed(1)+'%)':''}</div></div><div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value">${pend.filter(p=>p.status==='pending').length}</div><div class="stat-label">Menunggu Verifikasi</div></div>`;
+  const row=(p,st,edit)=>`<tr><td><strong>${esc(p.nama)}</strong><br><small>${esc(p.kategori||'')}</small>${p.catatan?`<br><small style="color:#b91c1c">Catatan: ${esc(p.catatan)}</small>`:''}</td><td>${kegLbl(p)}</td><td>${rp(p.hargaJual)}</td><td>${rp(modalTot(p))}</td><td>${p.dibuat||0} / ${p.terjual||0}</td><td>${rp(labaP(p))}</td><td>${stBadge(st)}</td><td>${edit?`<div class="inline-btns"><button class="btn btn-info btn-sm" onclick="ktForm(${p.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="ktDel(${p.id})">🗑️</button></div>`:'🔒'}</td></tr>`;
+  $('ktBody').innerHTML=[...pend.map(p=>row(p,p.status,true)),...ap.map(p=>row(p,'approved',false))].join('')||'<tr><td colspan="8" style="text-align:center;color:var(--mut)">Belum ada produk. Klik "Tambah Produk".</td></tr>';
+  const g={};ap.forEach(p=>{const key=(p.kegiatan||'ED')+' #'+(p.sesi||1);const o=g[key]||(g[key]={m:0,j:0});o.m+=modalTot(p);o.j+=(+p.hargaJual||0)*(+p.terjual||0)});
+  $('ktKeu').innerHTML=Object.entries(g).map(([n,o])=>`<tr><td>${esc(n)}</td><td>${rp(o.m)}</td><td>${rp(o.j)}</td><td>${rp(o.j-o.m)}</td><td>${o.j>0?((o.j-o.m)/o.j*100).toFixed(1)+'%':'-'}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--mut)">Belum ada data yang disetujui.</td></tr>';
+}
+function ktForm(id){
+  const kid=currentUser.kelompokId;if(!kid)return alert('Akun belum terhubung ke kelompok.');
+  const p=id?pkGet(kid).find(x=>x.id==id):null,kat=['Makanan Berat','Makanan Ringan','Minuman','Kerajinan','Jasa'];
+  showModal(p?'Edit Produk':'Tambah Produk',`<div class="form-group"><label class="form-label">Nama Produk</label><input id="kpNama" class="form-input" value="${esc(p?.nama||'')}"></div><div class="form-row"><div class="form-group"><label class="form-label">Kategori</label><select id="kpKat" class="form-select">${kat.map(x=>`<option ${p?.kategori===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Kegiatan</label><select id="kpKeg" class="form-select"><option value="ED" ${p?.kegiatan!=='BD'?'selected':''}>Entrepreneur Day</option><option value="BD" ${p?.kegiatan==='BD'?'selected':''}>Business Day</option></select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><input type="number" min="1" id="kpSesi" class="form-input" value="${p?.sesi||1}"></div><div class="form-group"><label class="form-label">Harga Jual / porsi</label><input type="number" min="0" id="kpHarga" class="form-input" value="${p?.hargaJual??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Modal Keseluruhan</label><input type="number" min="0" id="kpModal" class="form-input" value="${p?modalTot(p):''}"></div><div class="form-group"><label class="form-label">Jumlah Dibuat</label><input type="number" min="0" id="kpDibuat" class="form-input" value="${p?.dibuat??''}"></div></div><div class="form-group"><label class="form-label">Jumlah Terjual</label><input type="number" min="0" id="kpTerjual" class="form-input" value="${p?.terjual??''}"></div>`,()=>{
+    const nama=$('kpNama').value.trim();if(!nama){alert('Nama produk harus diisi!');return false}
+    const dib=parseInt($('kpDibuat').value)||0,ter=parseInt($('kpTerjual').value)||0,mod=parseInt($('kpModal').value)||0;
+    if(dib>0&&ter>dib){alert('Jumlah terjual tidak boleh lebih besar dari jumlah dibuat.');return false}
+    const rec={...p,id:p?.id||uid(),nama,kategori:$('kpKat').value,hargaJual:parseInt($('kpHarga').value)||0,modalTotal:mod,hargaModal:(dib||ter)>0?Math.round(mod/(dib||ter)):mod,dibuat:dib,terjual:ter,kelompokId:kid,kegiatan:$('kpKeg').value,sesi:Math.max(1,parseInt($('kpSesi').value)||1),tanggal:today(),status:'pending',catatan:'',diinputOleh:currentUser.nama};
+    const l=pkGet(kid);pkSet(kid,p?l.map(x=>x.id==p.id?rec:x):[...l,rec]);renderKetua();
+  });
+}
+function ktDel(id){if(!confirm('Hapus produk ini?'))return;const kid=currentUser.kelompokId;pkSet(kid,pkGet(kid).filter(x=>x.id!=id));renderKetua()}
+// ---------- Verifikasi oleh admin/fasilitator ----------
+function pkAll(){const out=[];Object.keys(localStorage).filter(k=>k.startsWith('ce_pk_')).forEach(k=>{try{(JSON.parse(localStorage.getItem(k))||[]).forEach(r=>{if(r.status==='pending')out.push({...r,_kid:k.slice(6)})})}catch(e){}});return out}
+function renderVerifikasi(){
+  const l=pkAll(),kel=DB.get('kelompok');
+  $('vfCount').textContent=l.length+' menunggu';
+  $('vfBody').innerHTML=l.map(p=>{const g=kel.find(x=>x.id==p._kid);return `<tr><td>${esc(g?.nama||'-')}</td><td><strong>${esc(p.nama)}</strong></td><td>${kegLbl(p)}</td><td>${rp(p.hargaJual)}</td><td>${rp(modalTot(p))}</td><td>${p.dibuat||0} / ${p.terjual||0}</td><td>${rp(labaP(p))}</td><td><div class="inline-btns"><button class="btn btn-success btn-sm" onclick="vfOk('${p._kid}',${p.id})">✔ Setujui</button><button class="btn btn-danger btn-sm" onclick="vfNo('${p._kid}',${p.id})">✖ Tolak</button></div></td></tr>`}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada data yang menunggu verifikasi.</td></tr>';
+}
+function vfOk(kid,id){
+  const l=pkGet(kid),r=l.find(x=>x.id==id);if(!r)return;
+  const {catatan,...rest}=r;
+  DB.set('produk',[...DB.raw('produk'),{...rest,status:'approved',disetujuiOleh:currentUser.nama}]);
+  pkSet(kid,l.filter(x=>x.id!=id));renderVerifikasi();
+}
+function vfNo(kid,id){
+  const c=prompt('Alasan penolakan (akan terlihat oleh ketua kelompok):');if(c===null)return;
+  pkSet(kid,pkGet(kid).map(x=>x.id==id?{...x,status:'rejected',catatan:c.trim()||'Perlu diperbaiki'}:x));renderVerifikasi();
+}
+
 // ---------- Keuangan ----------
 function initKeuangan(){keep('keuKelasFilter',kelasOpts(true));keuFilterKelas()}
 function keuFilterKelas(){
@@ -1134,7 +1224,7 @@ async function downloadAkunExcel(){
   if(/^https?:$/.test(location.protocol)){ws.mergeCells(`A${r}:E${r}`);const c=ws.getCell(`A${r}`);c.value={text:'Link aplikasi: '+location.origin+location.pathname,hyperlink:location.origin+location.pathname};c.font={color:{argb:'FF1D4ED8'},underline:true};c.alignment={horizontal:'center'};r++}
   ws.mergeCells(`A${r}:E${r}`);const n=ws.getCell(`A${r}`);n.value='Mohon dijaga kerahasiaannya. Setelah masuk, klik profil (pojok kanan atas) → Edit Akun untuk mengganti password.';n.font={italic:true,size:10,color:{argb:'FF6B7280'}};n.alignment={horizontal:'center',wrapText:true};ws.getRow(r).height=28;r+=2;
   const hr=ws.getRow(r);['No','Nama','Username','Password','Peran'].forEach((h,i)=>{const c=hr.getCell(i+1);c.value=h;c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF087F5B'}};c.alignment={horizontal:'center',vertical:'middle'};c.border=bd});hr.height=24;
-  list.forEach((a,i)=>{const row=ws.getRow(r+1+i);[i+1,a.nama,a.username,a.password,'Fasilitator'].forEach((v,j)=>{const c=row.getCell(j+1);c.value=String(v??'');if(j===0)c.value=i+1;c.border=bd;c.alignment={horizontal:j===0||j===4?'center':'left',vertical:'middle'};if(i%2)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F7F5'}}});row.height=22});
+  list.forEach((a,i)=>{const row=ws.getRow(r+1+i);[i+1,a.nama,a.username,a.password,a.role==='ketua'?'Ketua '+kelName(a.kelompokId):'Fasilitator'].forEach((v,j)=>{const c=row.getCell(j+1);c.value=String(v??'');if(j===0)c.value=i+1;c.border=bd;c.alignment={horizontal:j===0||j===4?'center':'left',vertical:'middle'};if(i%2)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F7F5'}}});row.height=22});
   const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
   a.download=`Akun_Guru_Cahaya_Entrepreneur_${today()}.xlsx`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
@@ -1219,7 +1309,7 @@ function avRender(){
 function akunForm(a,self){
   const edit=!!a;
   return `<div class="form-group"><label class="form-label">Nama ${edit?'':'(ketik untuk memilih dari daftar guru)'}</label><input id="akunNama" class="form-input" list="akunGuruList" autocomplete="off" value="${esc(a?.nama||'')}" ${edit?'':'oninput="akunPilihGuru()"'}><datalist id="akunGuruList">${akunGuruList(a).map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
-  <div class="form-row"><div class="form-group"><label class="form-label">Username</label><input id="akunUser" class="form-input" value="${esc(a?.username||'')}" ${edit?'readonly style="background:#f1f3f2"':''}></div><div class="form-group"><label class="form-label">Role</label><select id="akunRole" class="form-select" ${self||a?.username==='admin'?'disabled':''}><option value="fasilitator" ${a?.role==='fasilitator'?'selected':''}>Fasilitator</option><option value="admin" ${a?.role==='admin'?'selected':''}>Admin</option></select></div></div>
+  <div class="form-row"><div class="form-group"><label class="form-label">Username</label><input id="akunUser" class="form-input" value="${esc(a?.username||'')}" ${edit?'readonly style="background:#f1f3f2"':''}></div><div class="form-group"><label class="form-label">Role</label><select id="akunRole" class="form-select" onchange="$('akunKelWrap').style.display=this.value==='ketua'?'block':'none'" ${self||a?.username==='admin'?'disabled':''}><option value="fasilitator" ${a?.role==='fasilitator'?'selected':''}>Fasilitator</option><option value="admin" ${a?.role==='admin'?'selected':''}>Admin</option><option value="ketua" ${a?.role==='ketua'?'selected':''}>Ketua Kelompok</option></select></div></div><div class="form-group" id="akunKelWrap" style="display:${a?.role==='ketua'?'block':'none'}"><label class="form-label">Kelompok (khusus Ketua Kelompok)</label><select id="akunKel" class="form-select" ${self?'disabled':''}>${akunKelOpts(a?.kelompokId)}</select></div>
   ${self?'<div class="form-group"><label class="form-label">Password Lama (isi jika ingin ganti password)</label><input type="password" id="akunPassLama" class="form-input" autocomplete="current-password"></div>':''}
   <div class="form-group"><label class="form-label">${edit?'Password Baru (kosongkan jika tidak diganti)':'Password'}</label><input type="password" id="akunPass" class="form-input" autocomplete="new-password"></div>
   <div class="form-group"><label class="form-label">Avatar Profil</label><div id="avEditor"></div></div>`;
@@ -1232,7 +1322,8 @@ function showAddAkun(){
     if(!username||!password||!nama){alert('Semua field harus diisi!');return false}
     if(password.length<4){alert('Password minimal 4 karakter.');return false}
     const l=DB.get('accounts');if(l.some(a=>a.username===username)){alert('Username sudah ada!');return false}
-    l.push({username,password,nama,role:$('akunRole').value,...(avDraft?{avatar:avDraft}:{})});DB.set('accounts',l);renderAkun();
+    const isK=$('akunRole').value==='ketua';if(isK&&!$('akunKel').value){alert('Pilih kelompok untuk akun ketua!');return false}
+    l.push({username,password,nama,role:$('akunRole').value,...(isK?{kelompokId:+$('akunKel').value}:{}),...(avDraft?{avatar:avDraft}:{})});DB.set('accounts',l);renderAkun();
   });
   avRender();
 }
@@ -1250,7 +1341,7 @@ function showEditAkun(u,self){
     }
     const role=(self||a.username==='admin')?a.role:$('akunRole').value;
     if(a.role==='admin'&&role!=='admin'&&l.filter(x=>x.role==='admin').length<2){alert('Harus ada minimal satu admin.');return false}
-    const rec={...a,nama,role,password:pw||a.password};if(avDraft)rec.avatar=avDraft;else delete rec.avatar;
+    const rec={...a,nama,role,password:pw||a.password};if(role==='ketua'&&!self&&$('akunKel').value)rec.kelompokId=+$('akunKel').value;if(avDraft)rec.avatar=avDraft;else delete rec.avatar;
     DB.set('accounts',l.map(x=>x.username===u?rec:x));
     if(currentUser?.username===u){currentUser=rec;sessionStorage.setItem('ce_user',JSON.stringify(rec));
       $('userName').textContent=$('greetingName').textContent=rec.nama;setHeaderAvatar(rec)}
@@ -1953,7 +2044,7 @@ const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:pe
 const col=collection(db,'cq'),KEYS=new Set(window.fbKeys);
 let ready=false;
 const push=(k,json)=>{
-  if(!ready||!KEYS.has(k))return;
+  if(!ready||!(KEYS.has(k)||k.startsWith('pk_')))return;
   if(json.length>900000){console.warn('Data terlalu besar untuk Firestore:',k);window.fbStatus('offline');return}
   setDoc(doc(col,k),{json,by:(window.fbUser&&window.fbUser())||'',at:new Date().toISOString()}).catch(e=>{console.error(e);window.fbStatus('offline')});
 };
@@ -1966,7 +2057,7 @@ onSnapshot(col,snap=>{
   let changed=false;
   snap.docChanges().forEach(ch=>{
     if(ch.type==='removed'||ch.doc.metadata.hasPendingWrites)return;
-    const k=ch.doc.id;if(!KEYS.has(k))return;
+    const k=ch.doc.id;if(!(KEYS.has(k)||k.startsWith('pk_')))return;
     const j=ch.doc.data().json;
     if(typeof j==='string'&&localStorage.getItem('ce_'+k)!==j){localStorage.setItem('ce_'+k,j);changed=true}
   });
@@ -1975,6 +2066,7 @@ onSnapshot(col,snap=>{
     const inCloud=new Set(snap.docs.map(d=>d.id));
     // data yang belum ada di cloud (pertama kali / kunci baru) diunggah dari lokal
     KEYS.forEach(k=>{const v=localStorage.getItem('ce_'+k);if(v!==null&&!inCloud.has(k))push(k,v)});
+    Object.keys(localStorage).filter(x=>x.startsWith('ce_pk_')).forEach(x=>{const k=x.slice(3),v=localStorage.getItem(x);if(v!==null&&!inCloud.has(k))push(k,v)});
     window.fbStatus('ready');
   }else if(window.fbState!=='ready')window.fbStatus('ready');
   if(changed)window.fbOnRemote();
