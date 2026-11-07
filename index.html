@@ -246,6 +246,7 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         <div class="menu-item" data-page="perbandingan">⚖️ Perbandingan</div>
         <div class="menu-item" data-page="nilai-akhir">🏅 Nilai Akhir Siswa</div>
         <div class="menu-item" data-page="rekap">📋 Rekap Nilai</div>
+        <div class="menu-item" data-page="laporan-bulanan">📆 Laporan Bulanan</div>
         <div class="menu-item" data-page="dokumentasi">📸 Dokumentasi</div></div>
       <div class="menu-section"><div class="menu-section-title">System</div><div class="menu-item admin-only" data-page="pengaturan">⚙️ Pengaturan</div></div>
     </nav>
@@ -304,8 +305,8 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
       <div id="tab-ind-nilai"><div class="card">
         <div class="form-row">
           <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="indTanggal" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Kegiatan</label><select id="indKegiatan" class="form-select"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="indSesi" class="form-select"><option value="1">1</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="indKelas" class="form-select" onchange="loadIndSiswa()"></select></div>
-          <div class="form-group"><label class="form-label">Siswa</label><select id="indSiswa" class="form-select"></select></div>
+          <div class="form-group"><label class="form-label">Kegiatan</label><select id="indKegiatan" class="form-select" onchange="loadIndSiswa()"><option value="ED">Entrepreneur Day (di sekolah)</option><option value="BD">Business Day (di luar sekolah)</option></select></div><div class="form-group"><label class="form-label">Pelaksanaan ke-</label><select id="indSesi" class="form-select" onchange="loadIndSiswa()"><option value="1">1</option></select></div><div class="form-group"><label class="form-label">Kelas</label><select id="indKelas" class="form-select" onchange="indGantiKelas()"></select></div><div class="form-group"><label class="form-label">Kelompok</label><select id="indKelompok" class="form-select" onchange="loadIndSiswa()"></select></div>
+          <div class="form-group"><label class="form-label">Siswa</label><select id="indSiswa" class="form-select"></select><div id="indSiswaInfo" style="font-size:12px;color:var(--mut);margin-top:4px"></div><label style="font-size:12px;display:flex;gap:6px;align-items:center;margin-top:4px;cursor:pointer"><input type="checkbox" id="indTampilSudah" onchange="loadIndSiswa()"> Tampilkan juga siswa yang sudah dinilai</label></div>
           <div class="form-group"><label class="form-label">Fasilitator</label><select id="indFasilitator" class="form-select"></select></div>
         </div>
         <div id="indRubrikGrid"></div>
@@ -399,6 +400,19 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
         <div class="form-actions" style="margin:0 0 16px"><button class="btn btn-primary btn-sm" onclick="openAI();askAI('sukses')">🤖 Analisis AI</button> <button class="btn btn-success btn-sm" onclick="exportExcel()">📊 Export Excel</button> <button class="btn btn-info btn-sm" onclick="exportNA()">📥 Export CSV</button><button class="btn btn-success btn-sm" onclick="window.print()">🖨️ Print</button></div>
         <div class="table-wrapper"><table id="naTable"><thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>Kelompok</th><th>Individu ED</th><th>Individu BD</th><th>Kelompok ED</th><th>Kelompok BD</th><th>Nilai Akhir</th><th>Grade</th></tr></thead><tbody></tbody></table></div>
         <div style="font-size:12px;color:var(--mut);margin-top:8px">Skala 0–100. Angka dalam kurung = jumlah pelaksanaan yang dinilai. Nilai individu = rata-rata rubrik (1–4) ÷ 4 × 100.</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-laporan-bulanan">
+      <div class="page-header"><h1 class="page-title">📆 Laporan Bulanan</h1><p class="page-subtitle">Unduh laporan kegiatan, penjualan, dan penilaian peserta yang bertugas pada bulan terpilih (Excel)</p></div>
+      <div class="card">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Bulan</label><input type="month" id="lapBulan" class="form-input" onchange="renderLapBulanan()"></div>
+          <div class="form-group"><label class="form-label">Kelas</label><select id="lapKelas" class="form-select" onchange="renderLapBulanan()"></select></div>
+        </div>
+        <div class="stats-grid" id="lapStats"></div>
+        <div style="font-size:13px;color:var(--mut);margin:4px 0 14px">Format file Excel: sheet <b>Dashboard</b> di depan (kegiatan bulan ini per pekan + ringkasan), lalu sheet <b>Entrepreneur Day</b> dan <b>Business Day</b> yang dibagi per kelompok — laporan penjualan di kiri, penilaian peserta di kanan.</div>
+        <div class="form-actions"><button class="btn btn-success" id="btnLapBulanan" onclick="exportLapBulanan()">📊 Download Laporan Bulanan (Excel)</button></div>
       </div>
     </div>
 
@@ -622,7 +636,7 @@ function showPage(name){
   const mi=document.querySelector(`.menu-item[data-page="${name}"]`);
   $('breadcrumbText').textContent=mi?mi.textContent.trim():name;
   $('sidebar').classList.remove('active');window.scrollTo(0,0);
-  const init={ketua:renderKetua,verifikasi:renderVerifikasi,dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan,jadwal:initJadwal}[name];
+  const init={ketua:renderKetua,verifikasi:renderVerifikasi,dashboard:renderDashboard,penilaian:initPenilaian,'penilaian-individu':initPenilaianIndividu,kelompok:renderKelompok,produk:initProduk,keuangan:initKeuangan,siswa:initSiswa,fasilitator:renderFasilitator,akun:renderAkun,analitik:renderAnalitik,perbandingan:renderPerbandingan,rekap:initRekap,'laporan-bulanan':initLapBulanan,'nilai-akhir':initNilaiAkhir,dokumentasi:initDokumentasi,pengaturan:initPengaturan,jadwal:initJadwal}[name];
   if(init)init();
 }
 document.querySelectorAll('.menu-item,.mobile-nav-item').forEach(i=>i.addEventListener('click',()=>showPage(i.dataset.page)));
@@ -854,13 +868,25 @@ function resetPenilaian(){ASPEK.forEach((a,i)=>{$('score'+i).value=0;$('val'+i).
 
 // ---------- Penilaian individu ----------
 function initPenilaianIndividu(){
-  keep('indKelas',kelasOpts());keep('indFasilitator',fasOpts());keep('indSesi',sesiOpts());
+  keep('indKelas',kelasOpts());keep('indFasilitator',fasOpts());keep('indSesi',sesiOpts());indKelompokOpts();
   keep('rekapIndKelas',kelasOpts(true));keep('rekapIndFas',fasOpts(true));
   loadIndSiswa();renderIndRubrik();renderRekapInd();renderRubrikList();
 }
+function indKelompokOpts(){
+  const k=DB.get('kelompok').filter(x=>x.kelasId===$('indKelas').value);
+  keep('indKelompok','<option value="">Semua kelompok</option>'+k.map(x=>`<option value="${x.id}">${esc(x.nama)}</option>`).join(''));
+}
+function indGantiKelas(){$('indKelompok').value='';indKelompokOpts();loadIndSiswa()}
+// daftar siswa mengikuti Kelas + Kelompok; siswa yang sudah dinilai (kegiatan & pelaksanaan terpilih) otomatis disembunyikan
 function loadIndSiswa(){
-  const s=DB.get('siswa').filter(x=>x.kelasId===$('indKelas').value);
-  $('indSiswa').innerHTML=s.length?s.map(x=>`<option value="${x.id}">${esc(x.nama)} (NIS: ${esc(x.nis)})</option>`).join(''):'<option value="">-- Tidak ada siswa --</option>';
+  const kid=$('indKelompok').value,keg=$('indKegiatan').value,sesi=+$('indSesi').value,showDone=$('indTampilSudah').checked;
+  const done=new Set(DB.raw('penilaianIndividu').filter(p=>p.kegiatan===keg&&(p.sesi||1)===sesi).map(p=>String(p.siswaId)));
+  const all=DB.get('siswa').filter(x=>x.kelasId===$('indKelas').value&&(!kid||String(x.kelompokId)===kid))
+    .sort((a,b)=>(a.kelompokId?kelName(a.kelompokId):'~').localeCompare(b.kelompokId?kelName(b.kelompokId):'~')||a.nama.localeCompare(b.nama));
+  const list=all.filter(x=>showDone||!done.has(String(x.id)));
+  const sudah=all.filter(x=>done.has(String(x.id))).length;
+  $('indSiswa').innerHTML=list.length?list.map(x=>`<option value="${x.id}">${esc(x.nama)} (NIS: ${esc(x.nis)})${x.kelompokId&&!kid?' — '+esc(kelName(x.kelompokId)):''}${done.has(String(x.id))?' ✓ sudah dinilai':''}</option>`).join(''):`<option value="">${all.length?'-- Semua siswa sudah dinilai --':'-- Tidak ada siswa --'}</option>`;
+  $('indSiswaInfo').textContent=all.length?`${all.length-sudah} belum dinilai • ${sudah} sudah dinilai (${KEG[keg]} ke-${sesi})`:'';
 }
 function renderIndRubrik(){
   indSel={};
@@ -886,7 +912,7 @@ function saveIndividu(){
   let list=DB.get('penilaianIndividu');const kegiatan=$('indKegiatan').value,sesi=+$('indSesi').value,sameI=p=>p.siswaId===siswa.id&&p.kegiatan===kegiatan&&p.sesi===sesi;
   if(list.some(sameI)){if(!confirm(`${siswa.nama} sudah dinilai untuk ${KEG[kegiatan]} pelaksanaan ke-${sesi}. Ganti?`))return;list=list.filter(p=>!sameI(p))}
   list.push({id:uid(),kegiatan,sesi,siswaId:siswa.id,siswaNama:siswa.nama,nis:siswa.nis,kelasId:kelas.id,kelasNama:kelas.nama,kelompokId:siswa.kelompokId,fasId:fas.id,fasNama:fas.nama,scores:{...indSel},avg:avg.toFixed(2),scale100:(avg/4*100).toFixed(1),grade:numToGrade(avg),catatan:$('indCatatan').value,tanggal:$('indTanggal').value||today(),waktu:new Date().toISOString(),penilai:currentUser.username});
-  if(DB.set('penilaianIndividu',list)){alert('✅ Penilaian individu disimpan!');resetIndividu()}
+  if(DB.set('penilaianIndividu',list)){alert('✅ Penilaian individu disimpan!');resetIndividu();loadIndSiswa()}
 }
 function resetIndividu(){renderIndRubrik();$('indCatatan').value=''}
 function renderRubrikList(){
@@ -911,7 +937,7 @@ function renderRekapInd(){
   if(k)d=d.filter(p=>p.kelasId===k);if(f)d=d.filter(p=>p.fasId==f);
   $('rekapIndTable').querySelector('tbody').innerHTML=d.map((p,i)=>`<tr><td>${i+1}</td><td>${kegLbl(p)}</td><td>${esc(p.siswaNama)}</td><td>${esc(p.kelasNama)}</td><td>${esc(kelName(p.kelompokId))}</td><td>${p.avg}</td><td>${gBadge(p.grade)}</td><td>${esc(p.fasNama)}</td><td>${esc(p.tanggal)}</td><td><button class="btn btn-danger btn-sm" onclick="delInd(${p.id})">🗑️</button></td></tr>`).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--mut)">Tidak ada data</td></tr>';
 }
-function delInd(id){if(!confirm('Hapus penilaian ini?'))return;DB.set('penilaianIndividu',DB.get('penilaianIndividu').filter(p=>p.id!==id));renderRekapInd()}
+function delInd(id){if(!confirm('Hapus penilaian ini?'))return;DB.set('penilaianIndividu',DB.get('penilaianIndividu').filter(p=>p.id!==id));renderRekapInd();loadIndSiswa()}
 function download(name,csv){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
 function exportIndCSV(){
@@ -1471,6 +1497,136 @@ async function exportExcel(){
     DB.get('keuangan').map((x,i)=>{const g=kel.find(y=>y.id===x.kelompokId);return [i+1,x.tanggal,KEG[x.kegiatan||'ED'],kls.find(c=>c.id===g?.kelasId)?.nama||'-',g?.nama||'-',x.modal,x.penjualan,x.keuntungan,x.penjualan>0?x.keuntungan/x.penjualan:'',x.status]}),
     {rp:[5,6,7],pct:[8],center:[0,1,9],w:[5,12,18,12,24,15,15,15,10,12]});
   const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=`Laporan_Entrepreneur_Day_${today()}.xlsx`;document.body.appendChild(a);a.click();a.remove();
+}
+
+
+// ---------- Laporan Bulanan (Excel) ----------
+const lapBulanLbl=ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})};
+function initLapBulanan(){
+  if(!$('lapBulan').value)$('lapBulan').value=today().slice(0,7);
+  keep('lapKelas',kelasOpts(true));renderLapBulanan();
+}
+function lapData(ym,kelasId){
+  const inM=d=>String(d||'').slice(0,7)===ym,kel=DB.get('kelompok'),sis=DB.get('siswa');
+  const kelasOf=id=>kel.find(k=>k.id===id)?.kelasId,okKelas=kid=>!kelasId||kelasOf(kid)===kelasId;
+  const keu=DB.get('keuangan').filter(x=>inM(x.tanggal)&&okKelas(x.kelompokId));
+  const produk=DB.get('produk').filter(p=>inM(p.tanggal)&&okKelas(p.kelompokId));
+  const indAll=DB.raw('penilaianIndividu'),sesiOf=x=>x.sesi||1,kegOf=x=>x.kegiatan||'ED';
+  const indBln=indAll.filter(p=>inM(p.tanggal)&&(!kelasId||p.kelasId===kelasId));
+  const pen=DB.get('penilaian').filter(p=>inM(p.waktu)&&(!kelasId||p.kelasId===kelasId));
+  // kegiatan: dari jadwal + kegiatan yang terdeteksi dari data penjualan/penilaian
+  const kegRows=[],seen=new Set();
+  DB.get('jadwal').filter(j=>{const a=(j.tanggal||'').slice(0,7),e=(j.tanggalAkhir||j.tanggal||'').slice(0,7);return j.tanggal&&a<=ym&&e>=ym&&(!kelasId||!(j.kelasIds||[]).length||j.kelasIds.includes(kelasId))})
+    .sort((a,b)=>a.tanggal.localeCompare(b.tanggal)).forEach(j=>{const key=kegOf(j)+'|'+sesiOf(j);seen.add(key);
+      kegRows.push({kg:kegOf(j),start:j.tanggal,end:j.tanggalAkhir||j.tanggal,kelasIds:j.kelasIds||[],tgl:jdTglLbl(j),keg:KEG[kegOf(j)],sesi:sesiOf(j),kelas:jdKelasLbl(j),fas:jdFasLbl(j),lokasi:j.lokasi||'',key,catatan:j.catatan||'',sumber:'Jadwal'})});
+  const der=new Map();
+  const touch=(key,tgl,kid,fas)=>{if(!der.has(key))der.set(key,{tgl:[],kls:new Set(),fas:new Set()});const o=der.get(key);if(tgl)o.tgl.push(tgl);const k=kelasOf(kid);if(k)o.kls.add(DB.get('kelas').find(c=>c.id===k)?.nama||k);if(fas)o.fas.add(fas)};
+  keu.forEach(x=>touch(kegOf(x)+'|'+sesiOf(x),x.tanggal,x.kelompokId));
+  produk.forEach(p=>touch(kegOf(p)+'|'+sesiOf(p),p.tanggal,p.kelompokId));
+  indBln.forEach(p=>touch(kegOf(p)+'|'+sesiOf(p),p.tanggal,p.kelompokId,p.fasNama));
+  [...der.entries()].filter(([k])=>!seen.has(k)).forEach(([key,o])=>{const [g,n]=key.split('|'),t=o.tgl.sort();
+    kegRows.push({kg:g,start:t[0]||'',end:t[t.length-1]||'',kelasIds:[],tgl:t.length?(t[0]===t[t.length-1]?fmtTglPendek(t[0]):fmtTglPendek(t[0])+' – '+fmtTglPendek(t[t.length-1])):'-',keg:KEG[g],sesi:+n,kelas:[...o.kls].join(', ')||'-',fas:[...o.fas].join(', ')||'-',lokasi:'',key,catatan:'',sumber:'Data penjualan/penilaian'})});
+  kegRows.forEach(r=>{r.nKel=new Set(keu.filter(x=>kegOf(x)+'|'+sesiOf(x)===r.key).map(x=>x.kelompokId)).size});
+  // peserta yang bertugas = anggota kelompok yang berjualan di bulan tsb (+ siswa yang dinilai bulan tsb)
+  const aktif=new Map();const addA=(kid,key)=>{if(!kid)return;if(!aktif.has(kid))aktif.set(kid,new Set());aktif.get(kid).add(key)};
+  keu.forEach(x=>addA(x.kelompokId,kegOf(x)+'|'+sesiOf(x)));produk.forEach(p=>addA(p.kelompokId,kegOf(p)+'|'+sesiOf(p)));
+  const peserta=new Map(),kls=DB.get('kelas');
+  const put=(s,key,rec)=>{peserta.set(s.id+'|'+key,{s,key,rec})};
+  sis.forEach(s=>{const keys=aktif.get(s.kelompokId);if(!keys||!okKelas(s.kelompokId))return;
+    keys.forEach(key=>{const [g,n]=key.split('|');put(s,key,indAll.find(p=>p.siswaId===s.id&&kegOf(p)===g&&sesiOf(p)===+n))})});
+  indBln.forEach(p=>{const s=sis.find(x=>x.id===p.siswaId);const key=kegOf(p)+'|'+sesiOf(p);if(!s||peserta.has(s.id+'|'+key))return;put(s,key,p)});
+  const pesRows=[...peserta.values()].sort((a,b)=>(kls.find(c=>c.id===a.s.kelasId)?.nama||'').localeCompare(kls.find(c=>c.id===b.s.kelasId)?.nama||'')||kelName(a.s.kelompokId).localeCompare(kelName(b.s.kelompokId))||a.s.nama.localeCompare(b.s.nama));
+  return {ym,keu,produk,indBln,pen,kegRows,pesRows,kelasId};
+}
+function renderLapBulanan(){
+  const ym=$('lapBulan').value;if(!ym){$('lapStats').innerHTML='';return}
+  const d=lapData(ym,$('lapKelas').value),sum=k=>d.keu.reduce((a,x)=>a+(+x[k]||0),0),dinilai=d.pesRows.filter(r=>r.rec).length;
+  $('lapStats').innerHTML=`<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${d.kegRows.length}</div><div class="stat-label">Kegiatan</div></div><div class="stat-card success"><div class="stat-icon">💰</div><div class="stat-value">${rp(sum('penjualan'))}</div><div class="stat-label">Total Penjualan</div></div><div class="stat-card gold"><div class="stat-icon">📈</div><div class="stat-value">${rp(sum('keuntungan'))}</div><div class="stat-label">Total Keuntungan</div></div><div class="stat-card info"><div class="stat-icon">👤</div><div class="stat-value">${dinilai}/${d.pesRows.length}</div><div class="stat-label">Peserta Bertugas Dinilai</div></div>`;
+}
+async function exportLapBulanan(){
+  if(!window.ExcelJS)return alert('Library Excel belum termuat. Pastikan perangkat terhubung internet lalu muat ulang halaman.');
+  const ym=$('lapBulan').value;if(!ym)return alert('Pilih bulan terlebih dahulu.');
+  const kelasId=$('lapKelas').value,d=lapData(ym,kelasId),bln=lapBulanLbl(ym);
+  if(!d.kegRows.length&&!d.keu.length&&!d.produk.length&&!d.indBln.length)return alert('Belum ada data kegiatan, penjualan, atau penilaian pada '+bln+'.');
+  const btn=$('btnLapBulanan');btn.disabled=true;btn.textContent='⏳ Menyiapkan...';
+  try{
+    const wb=new ExcelJS.Workbook();wb.creator='Entrepreneur Day';wb.created=new Date();
+    const thin={style:'thin'},BD={top:thin,left:thin,bottom:thin,right:thin};
+    const fill=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c}}),BLUE='FF00B0F0',GREEN='FF92D050',YEL='FFFFFF00',LGREEN='FFC6EFCE',NUM='#,##0';
+    const colL=n=>{let t='';while(n>0){const m=(n-1)%26;t=String.fromCharCode(65+m)+t;n=Math.floor((n-1)/26)}return t};
+    const cell=(ws,r,c,v,o={})=>{const x=ws.getCell(r,c);if(v!==undefined)x.value=v;x.border=BD;x.alignment={horizontal:o.h||'center',vertical:'middle',wrapText:true};if(o.fill)x.fill=fill(o.fill);if(o.fmt)x.numFmt=o.fmt;if(o.b)x.font={bold:true};return x};
+    const bar=(ws,r,c1,c2,v,color,o={})=>{for(let c=c1;c<=c2;c++)cell(ws,r,c,c===c1?v:undefined,{fill:color,...o});if(c2>c1)ws.mergeCells(r,c1,r,c2)};
+    const kegOf=x=>x.kegiatan||'ED',sesiOf=x=>x.sesi||1,rub=DB.get('rubrik'),nA=rub.length,avgC=14+nA;
+    const kel=DB.get('kelompok'),kls=DB.get('kelas'),kn=id=>kel.find(k=>k.id===id),kelasNm=id=>kls.find(c=>c.id===kn(id)?.kelasId)?.nama||'-';
+    const LBL={ED:'Market Day',BD:'Business Day'},SHEET={ED:'Entrepreneur Day',BD:'Business Day'};
+    // ---- kumpulkan blok per kelompok × kegiatan × pelaksanaan
+    const bmap=new Map(),getB=(kid,kg,sesi)=>{const key=kid+'|'+kg+'|'+sesi;if(!bmap.has(key))bmap.set(key,{kid,kg,sesi,prods:[],mem:[],keu:[]});return bmap.get(key)};
+    d.produk.forEach(p=>{if(p.kelompokId)getB(p.kelompokId,kegOf(p),sesiOf(p)).prods.push(p)});
+    d.keu.forEach(x=>{if(x.kelompokId)getB(x.kelompokId,kegOf(x),sesiOf(x)).keu.push(x)});
+    d.pesRows.forEach(r=>{const [g,n]=r.key.split('|');if(r.s.kelompokId)getB(r.s.kelompokId,g,+n).mem.push(r)});
+    const blocks=[...bmap.values()].filter(b=>kn(b.kid)).sort((a,b)=>kelasNm(a.kid).localeCompare(kelasNm(b.kid))||kn(a.kid).nama.localeCompare(kn(b.kid).nama,'id',{numeric:true})||a.sesi-b.sesi);
+    const multi={ED:new Set(),BD:new Set()};blocks.forEach(b=>multi[b.kg]?.add(b.sesi));
+    const blockDate=b=>{const kid=kn(b.kid).kelasId,j=d.kegRows.find(r=>r.sumber==='Jadwal'&&r.kg===b.kg&&r.sesi===b.sesi&&(!r.kelasIds.length||r.kelasIds.includes(kid)));
+      if(j?.start)return j.start;const t=[...b.prods.map(p=>p.tanggal),...b.keu.map(x=>x.tanggal)].filter(Boolean).sort();return t.length?t[t.length-1]:''};
+    // ---- sheet Dashboard (dibuat pertama agar urutannya di depan)
+    const wd=wb.addWorksheet('Dashboard');
+    // ---- sheet per kegiatan
+    const refs={H:[],I:[],J:[]},vals={H:0,I:0,J:0};
+    const block=(ws,r0,b)=>{
+      const prods=b.prods.map(p=>({nama:p.nama,jumlah:(+p.dibuat||0)||(+p.terjual||0),terjual:+p.terjual||0,harga:+p.hargaJual||0,modal:modalTot(p)}));
+      if(!prods.length&&b.keu.length){const j=b.keu.reduce((a,x)=>a+(+x.penjualan||0),0),m=b.keu.reduce((a,x)=>a+(+x.modal||0),0);prods.push({nama:'(Laporan keuangan manual)',hasil:j,modal:m})}
+      const N=Math.max(5,prods.length,b.mem.length),f=r0+5,lst=f+N-1,tot=lst+1;
+      const lbl=LBL[b.kg]+(multi[b.kg].size>1?' ke-'+b.sesi:''),tg=blockDate(b);
+      bar(ws,r0,3,10,`${kelasNm(b.kid)} (${kn(b.kid).nama})`,BLUE,{b:true});
+      bar(ws,r0+2,3,10,lbl,GREEN);bar(ws,r0+2,12,avgC,'Penilaian',GREEN);
+      bar(ws,r0+3,3,10,tg?fmtTgl(tg):'-',YEL);
+      ['No','Nama',...rub.map(x=>x.nama),'Rata-rata'].forEach((h,i)=>{cell(ws,r0+3,12+i,h,{fill:YEL});cell(ws,r0+4,12+i,undefined,{fill:YEL});ws.mergeCells(r0+3,12+i,r0+4,12+i)});
+      ['No','Produk','Jumlah','Terjual','Harga Jual (Rp)','Hasil penjualan (Rp)','Modal awal (Rp)','Laba (Rp)'].forEach((h,i)=>cell(ws,r0+4,3+i,h));
+      let sH=0,sI=0,sJ=0;
+      for(let i=0;i<N;i++){const r=f+i,p=prods[i],has=!!p,hasil=p?(p.hasil!=null?p.hasil:p.harga*p.terjual):0,modal=p?.modal||0,z=has?NUM:'#,##0;-#,##0;';
+        cell(ws,r,3,i+1);cell(ws,r,4,p?.nama??'',{h:'left'});cell(ws,r,5,has&&p.jumlah!=null?p.jumlah:'',{fmt:NUM});cell(ws,r,6,has&&p.terjual!=null?p.terjual:'',{fmt:NUM});cell(ws,r,7,has&&p.harga!=null?p.harga:'',{fmt:NUM});
+        cell(ws,r,8,p?.hasil!=null?hasil:{formula:`G${r}*F${r}`,result:hasil},{fmt:z});cell(ws,r,9,has?modal:'',{fmt:NUM});cell(ws,r,10,{formula:`H${r}-I${r}`,result:hasil-modal},{fmt:z});
+        sH+=hasil;sI+=modal;sJ+=hasil-modal}
+      bar(ws,tot,3,7,'Total (Rp)',null,{h:'right',b:true});
+      [['H',8,sH],['I',9,sI],['J',10,sJ]].forEach(([L,c,v])=>{cell(ws,tot,c,{formula:`SUM(${L}${f}:${L}${lst})`,result:v},{fmt:NUM,b:true});refs[L].push(`'${ws.name}'!${L}${tot}`);vals[L]+=v});
+      for(let i=0;i<N;i++){const r=f+i,m=b.mem[i],sc=m?.rec?rub.map(x=>m.rec.scores?.[x.id]?gradeToNum(m.rec.scores[x.id]):''):rub.map(()=>''),nums=sc.filter(v=>v!==''),av=nums.length?nums.reduce((a,c)=>a+c,0)/nums.length:'';
+        cell(ws,r,12,i+1);cell(ws,r,13,m?.s.nama||'',{h:'left'});sc.forEach((v,k)=>cell(ws,r,14+k,v));
+        cell(ws,r,avgC,nA?{formula:`IFERROR(AVERAGE(${colL(14)}${r}:${colL(13+nA)}${r}),"")`,result:av}:'',{fmt:'0.0'})}
+      return tot+2;
+    };
+    const used=[];
+    ['ED','BD'].forEach(kg=>{const bs=blocks.filter(b=>b.kg===kg);if(!bs.length)return;
+      const ws=wb.addWorksheet(SHEET[kg]);used.push(kg);
+      [[3,4],[4,26],[5,10.6],[6,11.4],[7,17.6],[8,19],[9,16],[10,14],[11,3],[12,4.7],[13,27]].forEach(([c,w])=>ws.getColumn(c).width=w);
+      for(let i=0;i<nA;i++)ws.getColumn(14+i).width=14;ws.getColumn(avgC).width=11;
+      let r=2;bs.forEach(b=>{r=block(ws,r,b)})});
+    // ---- isi Dashboard
+    const [Y,M]=ym.split('-').map(Number),first=new Date(Y,M-1,1),last=new Date(Y,M,0);
+    const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`,mon=x=>x.toLocaleDateString('id-ID',{month:'long'});
+    wd.mergeCells(1,3,1,7);wd.getCell(1,3).value='Laporan Kabid Entrepreneur — '+bln+(kelasId?' • '+(kls.find(c=>c.id===kelasId)?.nama||''):'');wd.getCell(1,3).font={bold:true,size:14};
+    ['Pekan','Tanggal','Entrepreneur Day','Business Day','Keterangan'].forEach((h,i)=>cell(wd,3,3+i,h,{fill:YEL}));
+    let m0=new Date(first);m0.setDate(first.getDate()-((first.getDay()+6)%7));let wk=0,rr=4;
+    while(m0<=last){wk++;const fri=new Date(m0),sun=new Date(m0);fri.setDate(m0.getDate()+4);sun.setDate(m0.getDate()+6);
+      const lab=m0.getMonth()===fri.getMonth()?`${m0.getDate()}-${fri.getDate()} ${mon(fri)}`:`${m0.getDate()} ${mon(m0)} - ${fri.getDate()} ${mon(fri)}`;
+      const inW=kg=>d.kegRows.filter(x=>x.kg===kg&&x.start&&x.start<=iso(sun)&&x.end>=iso(m0));
+      const txt=kg=>inW(kg).map(x=>`✓ ke-${x.sesi}${x.kelas&&x.kelas!=='Semua kelas'&&x.kelas!=='-'?' ('+x.kelas+')':''}`).join('\n');
+      const ket=['ED','BD'].flatMap(kg=>inW(kg).map(x=>x.catatan)).filter(Boolean).join('; ');
+      cell(wd,rr,3,wk);cell(wd,rr,4,lab);['ED','BD'].forEach((kg,i)=>{const t=txt(kg);cell(wd,rr,5+i,t,t?{fill:LGREEN}:{})});cell(wd,rr,7,ket,{h:'left'});
+      rr++;m0.setDate(m0.getDate()+7)}
+    wd.mergeCells(rr,3,rr,7);wd.getCell(rr,3).alignment={horizontal:'left',vertical:'middle'};wd.getCell(rr,3).value='✓ = ada kegiatan pada pekan tersebut (ke-N = pelaksanaan ke-N). Kolom Keterangan boleh diisi manual.';wd.getCell(rr,3).font={italic:true,size:9,color:{argb:'FF667085'}};
+    rr+=2;bar(wd,rr,3,7,'Ringkasan Bulan Ini',GREEN,{b:true});rr++;
+    const sumRow=(label,v,fmt)=>{wd.mergeCells(rr,3,rr,5);cell(wd,rr,3,label,{h:'left',fill:'FFF1F5F3'});cell(wd,rr,4);cell(wd,rr,5);cell(wd,rr,6,v,{fmt});wd.mergeCells(rr,6,rr,7);cell(wd,rr,7);rr++};
+    const fx=L=>refs[L].length?{formula:refs[L].join('+'),result:vals[L]}:0,rated=d.pesRows.filter(x=>x.rec),av=rated.map(x=>parseFloat(x.rec.avg)||0);
+    sumRow('Jumlah kegiatan bulan ini',d.kegRows.length);
+    sumRow('Kelompok yang berjualan',new Set(blocks.filter(b=>b.prods.length||b.keu.length).map(b=>b.kid)).size);
+    sumRow('Total hasil penjualan (Rp)',fx('H'),NUM);sumRow('Total modal awal (Rp)',fx('I'),NUM);sumRow('Total laba (Rp)',fx('J'),NUM);
+    sumRow('Peserta bertugas sudah dinilai',`${rated.length} dari ${d.pesRows.length}`);
+    sumRow('Rata-rata nilai peserta (skala 1–4)',av.length?+(av.reduce((a,c)=>a+c,0)/av.length).toFixed(2):'-','0.00');
+    [[3,8],[4,26],[5,20],[6,20],[7,34]].forEach(([c,w])=>wd.getColumn(c).width=w);
+    const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a'),nm=lapBulanLbl(ym).replace(/\s+/g,'_');
+    a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=`Laporan_Kabid_Entrepreneur_-_${nm}${kelasId?'_'+(kls.find(c=>c.id===kelasId)?.nama||'').replace(/\W+/g,'_'):''}.xlsx`;document.body.appendChild(a);a.click();a.remove();
+  }catch(e){console.error(e);alert('Gagal membuat laporan: '+e.message)}
+  finally{btn.disabled=false;btn.textContent='📊 Download Laporan Bulanan (Excel)'}
 }
 
 // ---------- Rekap Keuangan per Kelas (Excel + grafik) ----------
