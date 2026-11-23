@@ -332,12 +332,12 @@ tbody tr:hover{background:#F8FBF9}td{border-bottom:1px solid #EEF2EF}
 
     <div class="page" id="page-produk">
       <div class="page-header"><h1 class="page-title">🛍️ Manajemen Produk</h1><p class="page-subtitle">Kelola produk yang dijual setiap kelompok</p></div>
-      <div class="card"><div class="card-header"><div class="card-title">Daftar Produk</div><button class="btn btn-primary btn-sm" onclick="showAddProduk()">➕ Tambah Produk</button></div><div class="form-row" style="margin-bottom:14px"><div class="form-group" style="margin:0"><label class="form-label">Filter Kelas</label><select id="prodFilterKelas" class="form-select" onchange="prodFilterKelas()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kelompok</label><select id="prodFilterKelompok" class="form-select" onchange="renderProduk()"></select></div></div><div class="table-wrapper"><table id="produkTable"><thead><tr><th></th><th>Nama Produk</th><th>Kategori</th><th>Harga</th><th>Modal Total</th><th>Margin</th><th>Kelompok</th><th>Pelaksanaan</th><th>Terjual / Dibuat</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Daftar Produk</div><button class="btn btn-primary btn-sm" onclick="showAddProduk()">➕ Tambah Produk</button></div><div class="form-row" style="margin-bottom:14px"><div class="form-group" style="margin:0"><label class="form-label">Filter Kelas</label><select id="prodFilterKelas" class="form-select" onchange="prodFilterKelas()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kelompok</label><select id="prodFilterKelompok" class="form-select" onchange="renderProduk()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kegiatan</label><select id="prodFilterKegiatan" class="form-select" onchange="renderProduk()"></select></div></div><div class="table-wrapper"><table id="produkTable"><thead><tr><th></th><th>Nama Produk</th><th>Kategori</th><th>Harga</th><th>Modal Total</th><th>Margin</th><th>Kelompok</th><th>Pelaksanaan</th><th>Terjual / Dibuat</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
     </div>
 
     <div class="page" id="page-keuangan">
       <div class="page-header"><h1 class="page-title">💰 Laporan Keuangan</h1><p class="page-subtitle">Pantau modal, penjualan, dan keuntungan</p></div>
-      <div class="card" style="padding:16px 22px"><div class="form-row"><div class="form-group" style="margin:0"><label class="form-label">Filter Kelas</label><select id="keuKelasFilter" class="form-select" onchange="keuFilterKelas()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kelompok</label><select id="keuKelompokFilter" class="form-select" onchange="renderKeuangan()"></select></div></div></div>
+      <div class="card" style="padding:16px 22px"><div class="form-row"><div class="form-group" style="margin:0"><label class="form-label">Filter Kelas</label><select id="keuKelasFilter" class="form-select" onchange="keuFilterKelas()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kelompok</label><select id="keuKelompokFilter" class="form-select" onchange="renderKeuangan()"></select></div><div class="form-group" style="margin:0"><label class="form-label">Filter Kegiatan</label><select id="keuKegiatanFilter" class="form-select" onchange="renderKeuangan()"></select></div></div></div>
       <div class="stats-grid" id="keuanganStats"></div>
       <div class="card"><div class="card-header"><div class="card-title">Laporan per Kelompok</div><div class="inline-btns" style="flex-wrap:wrap"><button id="btnRekapKeu" class="btn btn-success btn-sm" onclick="exportRekapKeuangan()" title="Download rekap per kelas (Excel) lengkap dengan persentase dan grafik. Ikuti Filter Kelas di atas.">📊 Download Rekap Excel</button><button class="btn btn-primary btn-sm" onclick="showAddKeuangan()">➕ Tambah Laporan</button></div></div><div class="table-wrapper"><table id="keuanganTable"><thead><tr><th>Tanggal</th><th>Kegiatan</th><th>Kelas</th><th>Kelompok</th><th>Modal</th><th>Penjualan</th><th>Keuntungan</th><th>Margin</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>
     </div>
@@ -681,6 +681,16 @@ const sesiOpts=(sel)=>Array.from({length:Math.max(MAX_SESI,+sel||0)},(_,i)=>`<op
 const modalTot=p=>p.modalTotal!=null?(+p.modalTotal||0):(+p.hargaModal||0)*(((+p.dibuat||0)||(+p.terjual||0))||1);
 const modalPorsi=p=>{const n=(+p.dibuat||0)||(+p.terjual||0);return n>0?modalTot(p)/n:modalTot(p)};
 const kegLbl=p=>`<span class="badge badge-${p.kegiatan==='BD'?'warning':'info'}">${p.kegiatan==='BD'?'BD':'ED'} #${p.sesi||1}</span>`;
+// filter kegiatan untuk tab Produk & Keuangan: nilai "ED|1" = Entrepreneur Day 1, "BD|1" = Business Day
+function kegFilterOpts(){
+  const all=[...DB.raw('produk'),...DB.raw('keuangan'),...DB.raw('penilaianIndividu')];
+  const mx=kg=>all.filter(x=>(x.kegiatan||'ED')===kg).reduce((a,x)=>Math.max(a,+x.sesi||1),1);
+  const nED=Math.max(2,mx('ED')),nBD=mx('BD');let h='<option value="">Semua Kegiatan</option>';
+  for(let i=1;i<=nED;i++)h+=`<option value="ED|${i}">Entrepreneur Day ${i}</option>`;
+  for(let i=1;i<=nBD;i++)h+=`<option value="BD|${i}">Business Day${nBD>1?' '+i:''}</option>`;
+  return h;
+}
+const kegMatch=(x,v)=>!v||((x.kegiatan||'ED')+'|'+(x.sesi||1))===v;
 const CFG_DEF={ED:50,BD:50,Ind:60,Kel:40,Kkm:71,mode:'avg',kelSource:'individu'};
 const cfg=()=>({...CFG_DEF,...(DB.get('cfgNilai',{})||{})});
 function migrateEvent(){['penilaian','penilaianIndividu','keuangan','produk'].forEach(k=>{const l=DB.get(k);let ch=false;l.forEach(p=>{if(!p.kegiatan){p.kegiatan='ED';ch=true}if(!p.sesi){p.sesi=1;ch=true}});if(ch)DB.set(k,l)})}
@@ -1028,15 +1038,15 @@ function deleteKelompok(id){
 }
 
 // ---------- Produk ----------
-function initProduk(){keep('prodFilterKelas',kelasOpts(true));prodFilterKelas()}
+function initProduk(){keep('prodFilterKelas',kelasOpts(true));keep('prodFilterKegiatan',kegFilterOpts());prodFilterKelas()}
 function prodFilterKelas(){
   const fk=$('prodFilterKelas').value;
   keep('prodFilterKelompok','<option value="">Semua Kelompok</option>'+DB.get('kelompok').filter(g=>!fk||g.kelasId===fk).map(g=>`<option value="${g.id}">${esc(g.nama)}</option>`).join(''));
   renderProduk();
 }
 function renderProduk(){
-  const kel=DB.get('kelompok'),fk=$('prodFilterKelas')?.value||'',fg=$('prodFilterKelompok')?.value||'';
-  $('produkTable').querySelector('tbody').innerHTML=DB.get('produk').filter(p=>(!fg||String(p.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===p.kelompokId)?.kelasId===fk)).map(p=>{const m=p.hargaJual>0?Math.round((p.hargaJual-modalPorsi(p))/p.hargaJual*100):0;return `<tr><td>📦</td><td><strong>${esc(p.nama)}</strong></td><td><span class="badge badge-primary">${esc(p.kategori)}</span></td><td>${rp(p.hargaJual)}</td><td>${rp(modalTot(p))}</td><td><span class="badge badge-${m>=0?'success':'danger'}">${m}%</span></td><td>${esc(kelName(p.kelompokId))}</td><td>${kegLbl(p)}</td><td>${p.terjual||0} / ${p.dibuat||0}</td><td><span class="badge badge-${p.status==='approved'?'success':'warning'}">${esc(p.status)}</span></td><td><div class="inline-btns"><button class="btn btn-info btn-sm" onclick="showEditProduk(${p.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteProduk(${p.id})">🗑️</button></div></td></tr>`}).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--mut)">Belum ada produk</td></tr>';
+  const kel=DB.get('kelompok'),fk=$('prodFilterKelas')?.value||'',fg=$('prodFilterKelompok')?.value||'',fv=$('prodFilterKegiatan')?.value||'';
+  $('produkTable').querySelector('tbody').innerHTML=DB.get('produk').filter(p=>kegMatch(p,fv)&&(!fg||String(p.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===p.kelompokId)?.kelasId===fk)).map(p=>{const m=p.hargaJual>0?Math.round((p.hargaJual-modalPorsi(p))/p.hargaJual*100):0;return `<tr><td>📦</td><td><strong>${esc(p.nama)}</strong></td><td><span class="badge badge-primary">${esc(p.kategori)}</span></td><td>${rp(p.hargaJual)}</td><td>${rp(modalTot(p))}</td><td><span class="badge badge-${m>=0?'success':'danger'}">${m}%</span></td><td>${esc(kelName(p.kelompokId))}</td><td>${kegLbl(p)}</td><td>${p.terjual||0} / ${p.dibuat||0}</td><td><span class="badge badge-${p.status==='approved'?'success':'warning'}">${esc(p.status)}</span></td><td><div class="inline-btns"><button class="btn btn-info btn-sm" onclick="showEditProduk(${p.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteProduk(${p.id})">🗑️</button></div></td></tr>`}).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--mut)">Belum ada produk</td></tr>';
 }
 const kelompokOpts=()=>DB.get('kelompok').map(k=>`<option value="${k.id}">${esc(k.nama)}</option>`).join('');
 function prodForm(p){
@@ -1142,15 +1152,15 @@ function vfNo(kid,id){
 }
 
 // ---------- Keuangan ----------
-function initKeuangan(){keep('keuKelasFilter',kelasOpts(true));keuFilterKelas()}
+function initKeuangan(){keep('keuKelasFilter',kelasOpts(true));keep('keuKegiatanFilter',kegFilterOpts());keuFilterKelas()}
 function keuFilterKelas(){
   const fk=$('keuKelasFilter').value;
   keep('keuKelompokFilter','<option value="">Semua Kelompok</option>'+DB.get('kelompok').filter(g=>!fk||g.kelasId===fk).map(g=>`<option value="${g.id}">${esc(g.nama)}</option>`).join(''));
   renderKeuangan();
 }
 function renderKeuangan(){
-  const kel=DB.get('kelompok'),kls=DB.get('kelas'),fk=$('keuKelasFilter')?.value||'',fg=$('keuKelompokFilter')?.value||'';
-  const k=DB.get('keuangan').filter(x=>(!fg||String(x.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===x.kelompokId)?.kelasId===fk));
+  const kel=DB.get('kelompok'),kls=DB.get('kelas'),fk=$('keuKelasFilter')?.value||'',fg=$('keuKelompokFilter')?.value||'',fv=$('keuKegiatanFilter')?.value||'';
+  const k=DB.get('keuangan').filter(x=>kegMatch(x,fv)&&(!fg||String(x.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===x.kelompokId)?.kelasId===fk));
   const sum=f=>k.reduce((s,x)=>s+(x[f]||0),0);
   const mg=k.length?(k.reduce((s,x)=>s+(x.penjualan>0?x.keuntungan/x.penjualan*100:0),0)/k.length).toFixed(1):0;
   $('keuanganStats').innerHTML=`<div class="stat-card"><div class="stat-icon">💵</div><div class="stat-value">${rp(sum('modal'))}</div><div class="stat-label">Total Modal</div></div><div class="stat-card success"><div class="stat-icon">💰</div><div class="stat-value">${rp(sum('penjualan'))}</div><div class="stat-label">Total Penjualan</div></div><div class="stat-card gold"><div class="stat-icon">📈</div><div class="stat-value">${rp(sum('keuntungan'))}</div><div class="stat-label">Total Keuntungan</div></div><div class="stat-card info"><div class="stat-icon">📊</div><div class="stat-value">${mg}%</div><div class="stat-label">Rata-rata Margin</div></div>`;
@@ -2051,8 +2061,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addE
   const persen=()=>{const v=parseFloat((DB.get('cfgInfak',{})||{}).persen);return isNaN(v)?2.5:v};
   window.setInfak=function(v){DB.set('cfgInfak',{persen:Math.max(0,Math.min(100,parseFloat(String(v).replace(',','.'))||0))});renderKeuangan()};
   after('renderKeuangan',()=>{
-    const kel=DB.get('kelompok'),fk=$('keuKelasFilter')?.value||'',fg=$('keuKelompokFilter')?.value||'';
-    const k=DB.get('keuangan').filter(x=>(!fg||String(x.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===x.kelompokId)?.kelasId===fk));
+    const kel=DB.get('kelompok'),fk=$('keuKelasFilter')?.value||'',fg=$('keuKelompokFilter')?.value||'',fv=$('keuKegiatanFilter')?.value||'';
+    const k=DB.get('keuangan').filter(x=>kegMatch(x,fv)&&(!fg||String(x.kelompokId)===fg)&&(!fk||kel.find(g=>g.id===x.kelompokId)?.kelasId===fk));
     const unt=Math.max(0,k.reduce((a,x)=>a+(+x.keuntungan||0),0)),p=persen();
     $('keuanganStats').insertAdjacentHTML('beforeend',`<div class="stat-card gold"><div class="stat-icon">🤲</div><div class="stat-value">${rp(Math.round(unt*p/100))}</div><div class="stat-label">Infak/Sedekah <input type="number" min="0" max="100" step="0.5" value="${p}" style="width:60px;padding:2px 6px;border:1px solid var(--bd);border-radius:6px" onchange="setInfak(this.value)">% dari keuntungan</div></div>`);
   });
